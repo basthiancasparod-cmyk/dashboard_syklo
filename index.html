@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Seguimiento de Operaciones</title>
+    <!-- Enlace al archivo CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+    <!-- Sección de Autenticación -->
+    <div id="authSection">
+        <div class="auth-container">
+            <div id="loginForm">
+                <h2>Iniciar Sesión</h2>
+                <div class="form-group">
+                    <label>Correo Electrónico:</label>
+                    <input type="email" id="loginEmail" placeholder="tu@correo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" onclick="loginUser()">Entrar</button>
+                <p class="auth-toggle" onclick="toggleAuthForms()">¿No tienes cuenta? Regístrate</p>
+            </div>
+            <div id="registerForm" style="display: none;">
+                <h2>Crear Cuenta</h2>
+                <div class="form-group">
+                    <label>Correo Electrónico:</label>
+                    <input type="email" id="registerEmail" placeholder="tu@correo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button class="btn btn-primary" onclick="registerUser()">Registrarse</button>
+                <p class="auth-toggle" onclick="toggleAuthForms()">¿Ya tienes cuenta? Inicia Sesión</p>
+            </div>
+            <p id="authError"></p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sección Principal -->
+        <div id="mainSection" class="section active">
+            <div class="header">
+                <h1>Sistema de Seguimiento de Operaciones</h1>
+                <div class="header-controls">
+                    <button class="wally-btn" onclick="switchToWally()">
+                        🚀 Wally Tech
+                    </button>
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span id="themeIcon">🌙</span>
+                        <span id="themeText">Modo Oscuro</span>
+                    </button>
+                    <button class="btn-secondary-header" onclick="switchToRatings()">
+                        ⭐ Calificaciones
+                    </button>
+                    <button class="btn-secondary-header" onclick="openConfigModal()">
+                        ⚙️ Configuración
+                    </button>
+                    <button class="btn-logout" onclick="logoutUser()">Cerrar Sesión</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="date-selector">
+                    <label>Fecha:</label>
+                    <input type="date" id="selectedDate">
+                </div>
+                <button class="add-btn" onclick="openModal()">
+                    + Agregar Operación
+                </button>
+                <div class="divider"></div>
+                <select id="historySelector" onchange="loadHistoryDate()">
+                    <option value="">Ver historial por fecha</option>
+                </select>
+            </div>
+
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-label">Promedio Compra VES</div>
+                    <div class="summary-value" id="promCompra">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Promedio Venta VES</div>
+                    <div class="summary-value" id="promVenta">0</div>
+                </div>
+                <div class="summary-item clickable" onclick="openBankBreachModal()">
+                    <div class="summary-label">Brecha</div>
+                    <div class="summary-value" id="brecha">0%</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Ganancias</div>
+                    <div class="summary-value profit" id="ganancias">0 VES / 0 USDC</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Total Operaciones</div>
+                    <div class="summary-value" id="totalOps">0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Meta Diaria</div>
+                    <div class="summary-value" id="dailyGoalProgress">
+                        <span id="currentDailyProfit">0 VES</span> / <span id="dailyGoal">0 VES</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="dailyProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Nuevos summary-items para Lotes y Pendientes -->
+                <div class="summary-item clickable" onclick="openLotDetailsModal()">
+                    <div class="summary-label">Lotes Activos</div>
+                    <div class="summary-value" id="activeLotsSummary">0</div>
+                </div>
+                <div class="summary-item clickable" onclick="openPendingDetailsModal()">
+                    <div class="summary-label">Pendientes</div>
+                    <div class="summary-value" id="pendingSummary">0 USDC</div>
+                </div>
+            </div>
+
+            <div class="table-header">
+                <h2>📋 Tabla de Operaciones</h2>
+            </div>
+
+            <div class="filter-controls">
+                <input type="text" id="searchOperations" placeholder="Buscar por usuario o referencia..." onkeyup="filterOperations()">
+                <select id="filterOperacion" onchange="filterOperations()">
+                    <option value="">Todas las Operaciones</option>
+                    <option value="Compra">Compra</option>
+                    <option value="Venta">Venta</option>
+                </select>
+                <select id="filterMetodoPago" onchange="filterOperations()">
+                    <option value="">Todos los Métodos</option>
+                    <option value="Pagomovil">Pagomovil</option>
+                    <option value="Banesco">Banesco</option>
+                    <option value="Venezuela">Venezuela</option>
+                    <option value="Bancamiga">Bancamiga</option>
+                    <option value="BNC">BNC</option>
+                </select>
+                <select id="filterEstatus" onchange="filterOperations()">
+                    <option value="">Todos los Estatus</option>
+                    <option value="En Curso">En Curso</option>
+                    <option value="En Disputa">En Disputa</option>
+                    <option value="Completado">Completado</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>USUARIO</th>
+                            <th>REF</th>
+                            <th>OPERACIÓN</th>
+                            <th>TASA</th>
+                            <th>MÉTODO DE PAGO</th>
+                            <th>Monto USDC</th>
+                            <th>Monto BS</th>
+                            <th>Comisión VES</th>
+                            <th>TOTAL</th>
+                            <th>/VES</th>
+                            <th>/USDC</th>
+                            <th>LOTE</th>
+                            <th>ESTATUS</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operationsTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección Wally Tech -->
+        <div id="wallySection" class="section">
+            <div class="header wally-header">
+                <h1>Sistema Wally Tech - USD/USDC</h1>
+                <div class="header-controls">
+                    <button class="back-btn" onclick="switchToMain()">
+                        ← Regresar
+                    </button>
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span id="themeIcon2">🌙</span>
+                        <span id="themeText2">Modo Oscuro</span>
+                    </button>
+                    <button class="btn-secondary-header" onclick="switchToRatings()">
+                        ⭐ Calificaciones
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="date-selector">
+                    <label>Fecha:</label>
+                    <input type="date" id="wallySelectedDate">
+                </div>
+                <button class="add-btn" onclick="openWallyModal()">
+                    + Agregar Operación Wally
+                </button>
+                <select id="wallyHistorySelector" onchange="loadWallyHistoryDate()">
+                    <option value="">Ver historial por fecha</option>
+                </select>
+            </div>
+
+            <div class="filter-controls">
+                <input type="text" id="searchWallyOperations" placeholder="Buscar por usuario o referencia..." onkeyup="filterWallyOperations()">
+                <select id="filterWallyOperacion" onchange="filterWallyOperations()">
+                    <option value="">Todas las Operaciones</option>
+                    <option value="Compra">Compra</option>
+                    <option value="Venta">Venta</option>
+                </select>
+                <select id="filterWallyMetodo" onchange="filterWallyOperations()">
+                    <option value="">Todos los Métodos</option>
+                    <option value="Wally">Wally</option>
+                    <option value="Syklo">Syklo</option>
+                </select>
+            </div>
+
+            <div class="wally-table">
+                <div class="wally-column compra">
+                    <h3>COMPRA - RECIBO USDC</h3>
+                    <div class="wally-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>USUARIO</th>
+                                    <th>REF</th>
+                                    <th>RECIBO USDC</th>
+                                    <th>TASA COMPRA</th>
+                                    <th>ENVIO USD</th>
+                                    <th>GANANCIA EN USDC</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wallyCompraTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="wally-column venta">
+                    <h3>VENTA - RECIBO USD</h3>
+                    <div class="wally-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>USUARIO</th>
+                                    <th>REF</th>
+                                    <th>ENVIO USDC</th>
+                                    <th>TASA VENTA</th>
+                                    <th>RECIBO USD</th>
+                                    <th>GANANCIA EN USD</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wallyVentaTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="wally-summary">
+                    <h3>Resumen Wally Tech</h3>
+                    <div class="wally-summary-grid">
+                        <div class="wally-summary-item">
+                            <div class="summary-label">VAL. INI. WALLY</div>
+                            <div class="summary-value" style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                                <input type="number" id="wallyValorInicialInput" step="0.01" placeholder="0.00" 
+                                    onblur="saveWallyValorInicial()" class="wally-input">
+                                <button id="editWallyIniBtn" onclick="editWallyValorInicial()" style="display:none;" class="edit-icon">✏️</button>
+                            </div>
+                        </div>
+                        <div class="wally-summary-item">
+                            <div class="summary-label">VAL. ACT. WALLY</div>
+                            <div class="summary-value" id="wallyValorActual">0</div>
+                        </div>
+                        <div class="wally-summary-item">
+                            <div class="summary-label">GANANCIAS USDC/USD</div>
+                            <div class="summary-value" id="wallyGanancias">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Calificaciones -->
+        <div id="ratingsSection" class="section">
+            <div class="header">
+                <h1>⭐ Calificaciones de Usuarios</h1>
+                <div class="header-controls">
+                    <button class="back-btn" onclick="switchToMain()">
+                        ← Regresar
+                    </button>
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span id="themeIcon3">🌙</span>
+                        <span id="themeText3">Modo Oscuro</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="text" id="searchRatings" placeholder="Buscar usuario..." onkeyup="filterRatings()">
+            </div>
+
+            <div id="ratingsTableContainer">
+                <table id="ratingsTable">
+                    <thead>
+                        <tr>
+                            <th>USUARIO</th>
+                            <th>CALIFICACIÓN PROMEDIO</th>
+                            <th>TOTAL CALIFICACIONES</th>
+                            <th>DETALLES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ratingsTableBody">
+                        <!-- Las calificaciones se renderizarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal para operaciones principales (NUEVO DISEÑO) -->
+    <div id="operationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nueva Operación</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-container">
+                    <!-- Panel Izquierdo - Información Básica -->
+                    <div class="form-left">
+                        <div class="panel-title">
+                            <span class="icon">👤</span>
+                            Información Básica
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Usuario</label>
+                            <input type="text" id="usuario" placeholder="Nombre del usuario" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Referencia</label>
+                                <input type="text" id="referencia" placeholder="Nº de referencia" required>
+                            </div>
+                            <div class="form-group status-group">
+                                <label>Estatus</label>
+                                <select id="estatus" required>
+                                    <option value="">Seleccionar estatus...</option>
+                                    <option value="En Curso">🔄 En Curso</option>
+                                    <option value="En Disputa">⚠️ En Disputa</option>
+                                    <option value="Completado">✅ Completado</option>
+                                </select>
+                                <!-- El span.status-indicator se ha ocultado vía CSS -->
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Operación</label>
+                                <select id="operacion" onchange="updateFeeField()" required>
+                                    <option value="">Seleccionar operación...</option>
+                                    <option value="Compra">📈 Compra</option>
+                                    <option value="Venta">📉 Venta</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select id="metodoPago" onchange="updateFeeField()" required>
+                                    <option value="">Seleccionar método...</option>
+                                    <!-- Options will be dynamically loaded and prioritized -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel Derecho - Información Financiera -->
+                    <div class="form-right">
+                        <div class="panel-title">
+                            <span class="icon">💰</span>
+                            Información Financiera
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tasa de Cambio</label>
+                                <input type="number" id="tasa" step="0.01" placeholder="0.00" onchange="calculateAll()" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Monto USDC</label>
+                                <input type="number" id="montoUsdc" step="0.01" placeholder="0.00" onchange="calculateAll()" required>
+                            </div>
+                        </div>
+                        
+                        <div class="calc-display">
+                            <div class="calc-row">
+                                <span class="calc-label">Monto BS:</span>
+                                <span class="calc-value" id="displayMontoBs">0.00</span>
+                            </div>
+                            <div class="calc-row">
+                                <span class="calc-label">Comisión VES:</span>
+                                <span class="calc-value" id="displayComision">0.00</span>
+                            </div>
+                            <div class="calc-row">
+                                <span class="calc-label">Total:</span>
+                                <span class="calc-value" id="displayTotal">0.00</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos ocultos para compatibilidad con saveOperation -->
+                        <input type="hidden" id="montoBs">
+                        <input type="hidden" id="comisionVes">
+                        <input type="hidden" id="total">
+                    </div>
+                    
+                    <!-- Panel de Información Adicional como sección colapsable -->
+                    <div id="additionalInfoSection" class="collapsible-section">
+                        <div class="section-header" onclick="toggleCollapsibleSection(this)">
+                            <h3>
+                                <span class="icon">📋</span>
+                                Información Adicional (Opcional)
+                            </h3>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Ganancia VES</label>
+                                    <input type="text" id="ves" placeholder="Ganancia VES">
+                                </div>
+                                <div class="form-group">
+                                    <label>Ganancia USDC</label>
+                                    <input type="text" id="usdc" placeholder="Ganancia USDC">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lote</label>
+                                    <input type="text" id="lote" placeholder="Número de lote">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    ✖️ Cancelar
+                </button>
+                <button class="btn btn-green" onclick="pasteSpecial()">
+                    📋 Pegado Especial
+                </button>
+                <button class="btn btn-primary" onclick="saveOperation()">
+                    💾 Guardar Operación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para operaciones Wally -->
+    <div id="wallyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="wallyModalTitle">Agregar Operación Wally Tech</h2>
+                <button class="close-btn" onclick="closeWallyModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-sections">
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span>💱</span>
+                            Operación USD/USDC
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Usuario:</label>
+                                <input type="text" id="wallyUsuario" placeholder="Nombre del usuario" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Referencia:</label>
+                                <input type="text" id="wallyReferencia" placeholder="Número de referencia" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Operación:</label>
+                                <select id="wallyOperacion" onchange="updateWallyFields()" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Compra">📈 Compra (Recibo USDC)</option>
+                                    <option value="Venta">📉 Venta (Recibo USD)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Método:</label>
+                                <select id="wallyMetodo" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Wally">🚀 Wally</option>
+                                    <option value="Syklo">⚡ Syklo</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="reciboUsdcGroup" style="display:none;">
+                                <label>Recibo USDC:</label>
+                                <input type="number" id="reciboUsdc" step="0.01" placeholder="0.00" onchange="calculateWallyCompra()">
+                            </div>
+                            <div class="form-group" id="tasaCompraGroup" style="display:none;">
+                                <label>Tasa Compra:</label>
+                                <input type="number" id="tasaCompra" step="0.001" placeholder="0.000" onchange="calculateWallyCompra()">
+                            </div>
+                            <div class="form-group" id="envioUsdGroup" style="display:none;">
+                                <label>Envío USD (Calculado):</label>
+                                <input type="number" id="envioUsd" class="calculated" readonly>
+                            </div>
+                            <div class="form-group" id="gananciaUsdcGroup" style="display:none;">
+                                <label>Ganancia USDC (Calculada):</label>
+                                <input type="number" id="gananciaUsdc" class="calculated" readonly>
+                            </div>
+
+                            <!-- Campos para Venta (Reestructurados) -->
+                            <div class="form-group" id="envioUsdcVentaGroup" style="display:none;">
+                                <label>Envío USDC:</label>
+                                <input type="number" id="envioUsdcVenta" step="0.01" placeholder="0.00" onchange="calculateWallyVenta()">
+                            </div>
+                            <div class="form-group" id="tasaVentaGroup" style="display:none;">
+                                <label>Tasa Venta:</label>
+                                <input type="number" id="tasaVenta" step="0.001" placeholder="0.000" onchange="calculateWallyVenta()">
+                            </div>
+                            <div class="form-group" id="reciboUsdCalculadoGroup" style="display:none;">
+                                <label>Recibo USD (Calculado):</label>
+                                <input type="number" id="reciboUsdCalculado" class="calculated" readonly>
+                            </div>
+                            <div class="form-group" id="gananciaUsdGroup" style="display:none;">
+                                <label>Ganancia USD (Calculada):</label>
+                                <input type="number" id="gananciaUsd" class="calculated" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeWallyModal()">
+                    ✖️ Cancelar
+                </button>
+                <button class="btn btn-green" onclick="pasteSpecialWally()">
+                    📋 Pegado Especial
+                </button>
+                <button class="btn btn-primary" onclick="saveWallyOperation()">
+                    💾 Guardar Operación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Calificación -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Calificar Transacción</h2>
+                <button class="close-btn" onclick="closeRatingModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="text-align: center;">Por favor, califica la transacción con el usuario <strong id="ratingUserName"></strong>:</p>
+                <div class="form-group">
+                    <label>Califica la transacción con este usuario:</label>
+                    <div class="rating-stars" id="ratingTransaction">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Califica la rapidez de la transacción:</label>
+                    <div class="rating-stars" id="ratingSpeed">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Califica la diligencia del usuario:</label>
+                    <div class="rating-stars" id="ratingDiligence">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="submitRating()">Guardar Calificación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal de Configuración -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">⚙️ Configuración de Usuario</h2>
+                <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-sections">
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span>💳</span>
+                            Métodos de Pago Frecuentes
+                        </div>
+                        <div class="form-group">
+                            <label>Selecciona y ordena tus métodos de pago preferidos (arrastrar para reordenar):</label>
+                            <ul id="frequentPaymentMethodsList" class="sortable-list">
+                                <!-- Payment methods will be loaded here -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span>🧠</span>
+                            Parámetros de la IA
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Brecha Mínima (%):</label>
+                                <input type="number" id="aiBrechaMin" step="0.1" placeholder="Ej: 2.0">
+                            </div>
+                            <div class="form-group">
+                                <label>Brecha Máxima (%):</label>
+                                <input type="number" id="aiBrechaMax" step="0.1" placeholder="Ej: 4.0">
+                            </div>
+                            <div class="form-group">
+                                <label>Lotes Activos (umbral):</label>
+                                <input type="number" id="aiMuchoLotes" step="1" placeholder="Ej: 3">
+                            </div>
+                            <div class="form-group">
+                                <label>Recompra Crítica (USDC):</label>
+                                <input type="number" id="aiRecompraCritica" step="0.01" placeholder="Ej: 100.00">
+                            </div>
+                            <div class="form-group">
+                                <label>Reventa Crítica (USDC):</label>
+                                <input type="number" id="aiReventaCritica" step="0.01" placeholder="Ej: 100.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span>🎯</span>
+                            Metas de Ganancia
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Meta de Ganancia Diaria (VES):</label>
+                                <input type="number" id="dailyProfitGoal" step="0.01" placeholder="Ej: 500.00">
+                            </div>
+                            <!-- Add weekly/monthly goals if desired -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeConfigModal()">
+                    ✖️ Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="saveConfig()">
+                    💾 Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal de Perfil de Usuario -->
+    <div id="userProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">👤 Perfil de Usuario: <span id="profileUserName"></span></h2>
+                <button class="close-btn" onclick="closeUserProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-summary">
+                    <div class="profile-item">
+                        <div class="profile-label">Calificación Promedio</div>
+                        <div class="profile-value" id="profileAvgRating">0.0 ★</div>
+                    </div>
+                    <div class="profile-item">
+                        <div class="profile-label">Total Calificaciones</div>
+                        <div class="profile-value" id="profileTotalRatings">0</div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📊</span>
+                        Estadísticas Clave
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Volumen Total Operado (USDC):</label>
+                            <input type="text" id="profileTotalUsdc" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Volumen Total Operado (VES):</label>
+                            <input type="text" id="profileTotalVes" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Número de Operaciones:</label>
+                            <input type="text" id="profileNumOps" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Última Operación:</label>
+                            <input type="text" id="profileLastOpDate" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📝</span>
+                        Notas Privadas
+                    </div>
+                    <div class="form-group">
+                        <textarea id="profileNotes" rows="5" placeholder="Añade notas sobre este usuario..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveProfileNotes()">Guardar Notas</button>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <span>📜</span>
+                        Historial de Operaciones
+                    </div>
+                    <div class="table-container profile-history-table">
+                        <table id="profileHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Operación</th>
+                                    <th>Monto USDC</th>
+                                    <th>Monto BS</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Operations will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Brecha por Banco (MODIFICADO) -->
+    <div id="bankBreachModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 Brecha por Método de Pago</h2>
+                <button class="close-btn" onclick="closeBankBreachModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="bankBreachCards" class="info-cards-grid">
+                    <!-- Bank breach data will be rendered here as cards -->
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeBankBreachModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal de Detalles de Lotes (MODIFICADO) -->
+    <div id="lotDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📦 Detalles de Lotes Activos</h2>
+                <button class="close-btn" onclick="closeLotDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="lotDetailsCards" class="info-cards-grid">
+                    <!-- Lot details will be rendered here as cards -->
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeLotDetailsModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal de Detalles de Pendientes (MODIFICADO) -->
+    <div id="pendingDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 Detalles de Pendientes</h2>
+                <button class="close-btn" onclick="closePendingDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pending-summary-grid">
+                    <div class="summary-section">
+                        <h3>Recompra Pendiente</h3>
+                        <p id="pendingRepurchaseSummary">0.00 USDC</p>
+                    </div>
+                    <div class="summary-section">
+                        <h3>Reventa Pendiente</h3>
+                        <p id="pendingResaleSummary">0.00 USDC</p>
+                    </div>
+                </div>
+                
+                <div class="pending-details-grid">
+                    <div class="pending-column">
+                        <h4>Operaciones de Recompra</h4>
+                        <div id="pendingRepurchaseList" class="operation-list">
+                            <!-- Pending repurchase operations will be rendered here -->
+                        </div>
+                    </div>
+                    <div class="pending-column">
+                        <h4>Operaciones de Reventa</h4>
+                        <div id="pendingResaleList" class="operation-list">
+                            <!-- Pending resale operations will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closePendingDetailsModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Centro de Operaciones IA -->
+    <div id="aiOperationsCenter">
+        <button id="aiToggleBtn">
+            🤖
+            <div id="aiNotificationBadge">0</div>
+        </button>
+        
+        <div id="aiPanel">
+            <!-- Header -->
+            <div id="aiHeader">
+                <span>🧠</span>
+                <h3>Centro de Operaciones IA</h3>
+            </div>
+
+            <!-- Estado del Sistema -->
+            <div id="aiStatus">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Sistema Activo - Monitoreando</span>
+            </div>
+
+            <!-- Métricas en Tiempo Real (Solo Brecha y Ganancia Hoy) -->
+            <div id="aiMetrics">
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">Brecha Actual</div>
+                        <div class="metric-value" id="currentGap">0%</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Ganancia Hoy</div>
+                        <div class="metric-value positive" id="dailyProfitAI">0 VES / 0 USDC</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div id="aiNotifications">
+                <!-- Las notificaciones se renderizarán aquí -->
+            </div>
+
+            <!-- Controles -->
+            <div id="aiControls">
+                <button class="ai-control-btn clear" onclick="clearNotifications()">
+                    🗑️ Limpiar
+                </button>
+                <button class="ai-control-btn settings" onclick="openConfigModal()">
+                    ⚙️ Config
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Enlace al archivo JavaScript -->
+    <script src="script.js"></script>
+
+<!-- Contenedor para Toasts -->
+<div id="toast-container"></div>
+
+</body>
+</html>
