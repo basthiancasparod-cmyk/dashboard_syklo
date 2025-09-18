@@ -393,15 +393,27 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Tasa de Cambio</label>
-                                <input type="number" id="tasa" step="0.01" placeholder="0.00" onchange="calculateAll()" required>
+                                <input type="number" id="tasa" step="0.01" placeholder="0.00" onkeyup="calculateAll()" required>
                             </div>
                             <div class="form-group">
                                 <label>Monto USDC</label>
-                                <input type="number" id="montoUsdc" step="0.01" placeholder="0.00" onchange="calculateAll()" required>
+                                <input type="number" id="montoUsdc" step="0.001" placeholder="0.00" onkeyup="calculateAll()" required>
                             </div>
+                        </div>
+
+                        <div class="form-group switch-container">
+                            <label class="switch">
+                                <input type="checkbox" id="applyAdCommissionSwitch" onchange="calculateAll()">
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="adCommissionLabel">Aplicar 0.0% comisión por anuncio</span>
                         </div>
                         
                         <div class="calc-display">
+                             <div class="calc-row commission" id="displayAdCommissionRow" style="display: none;">
+                                <span class="calc-label" id="displayAdCommissionLabel">Comisión por Anuncio "0.0%":</span>
+                                <span class="calc-value" id="displayAdCommission">0.000 (0.000)</span>
+                            </div>
                             <div class="calc-row">
                                 <span class="calc-label">Monto BS:</span>
                                 <span class="calc-value" id="displayMontoBs">0.00</span>
@@ -410,7 +422,7 @@
                                 <span class="calc-label">Comisión VES:</span>
                                 <span class="calc-value" id="displayComision">0.00</span>
                             </div>
-                            <div class="calc-row">
+                            <div class="calc-row total">
                                 <span class="calc-label">Total:</span>
                                 <span class="calc-value" id="displayTotal">0.00</span>
                             </div>
@@ -506,11 +518,11 @@
                             </div>
                             <div class="form-group" id="reciboUsdcGroup" style="display:none;">
                                 <label>Recibo USDC:</label>
-                                <input type="number" id="reciboUsdc" step="0.01" placeholder="0.00" onchange="calculateWallyCompra()">
+                                <input type="number" id="reciboUsdc" step="0.01" placeholder="0.00" onkeyup="calculateWallyCompra()">
                             </div>
                             <div class="form-group" id="tasaCompraGroup" style="display:none;">
                                 <label>Tasa Compra:</label>
-                                <input type="number" id="tasaCompra" step="0.001" placeholder="0.000" onchange="calculateWallyCompra()">
+                                <input type="number" id="tasaCompra" step="0.001" placeholder="0.000" onkeyup="calculateWallyCompra()">
                             </div>
                             <div class="form-group" id="envioUsdGroup" style="display:none;">
                                 <label>Envío USD (Calculado):</label>
@@ -524,11 +536,11 @@
                             <!-- Campos para Venta (Reestructurados) -->
                             <div class="form-group" id="envioUsdcVentaGroup" style="display:none;">
                                 <label>Envío USDC:</label>
-                                <input type="number" id="envioUsdcVenta" step="0.01" placeholder="0.00" onchange="calculateWallyVenta()">
+                                <input type="number" id="envioUsdcVenta" step="0.01" placeholder="0.00" onkeyup="calculateWallyVenta()">
                             </div>
                             <div class="form-group" id="tasaVentaGroup" style="display:none;">
                                 <label>Tasa Venta:</label>
-                                <input type="number" id="tasaVenta" step="0.001" placeholder="0.000" onchange="calculateWallyVenta()">
+                                <input type="number" id="tasaVenta" step="0.001" placeholder="0.000" onkeyup="calculateWallyVenta()">
                             </div>
                             <div class="form-group" id="reciboUsdCalculadoGroup" style="display:none;">
                                 <label>Recibo USD (Calculado):</label>
@@ -621,6 +633,19 @@
                             <ul id="frequentPaymentMethodsList" class="sortable-list">
                                 <!-- Payment methods will be loaded here -->
                             </ul>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span>⚙️</span>
+                            Parámetros Generales
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Comisión por Anuncio (%):</label>
+                                <input type="number" id="adCommission" step="0.1" placeholder="Ej: 0.2">
+                            </div>
                         </div>
                     </div>
 
