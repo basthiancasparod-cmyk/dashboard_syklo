@@ -557,7 +557,7 @@ input:focus, select:focus {
 
 #operationModal .panel-title {
     font-size: 18px;
-    font-weight: 600; /* Corregido el typo */
+    font-weight: 600; 
     color: var(--text-primary);
     margin-bottom: 24px;
     display: flex;
@@ -635,7 +635,6 @@ input:focus, select:focus {
 }
 
 /* Status Indicators */
-/* Corrección 2: Eliminar el punto verde parpadeante del input de status */
 #operationModal .status-group .status-indicator {
     display: none; /* Ocultar el indicador de estado */
 }
@@ -646,18 +645,17 @@ input:focus, select:focus {
     border: 1px solid var(--info);
     border-radius: 12px;
     padding: 16px;
-    margin: 20px 0;
+    margin-top: 20px;
 }
 
 #operationModal .calc-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    padding: 4px 0;
 }
 
-#operationModal .calc-row:last-child {
-    margin-bottom: 0;
+#operationModal .calc-row.total {
     font-weight: 600;
     font-size: 16px;
     border-top: 1px solid var(--info);
@@ -674,6 +672,16 @@ input:focus, select:focus {
     color: var(--info);
     font-weight: 500;
 }
+
+#operationModal .calc-row.commission {
+    color: var(--warning);
+    font-size: 13px;
+}
+#operationModal .calc-row.commission .calc-label,
+#operationModal .calc-row.commission .calc-value {
+    color: var(--warning);
+}
+
 
 /* Buttons */
 #operationModal .modal-buttons {
@@ -792,7 +800,6 @@ input:focus, select:focus {
     content: "💱";
 }
 
-/* Corrección 1: Estilos para el modal de Wally */
 #wallyModal .modal-content {
     background: var(--bg-primary);
     border-radius: 20px;
@@ -944,9 +951,6 @@ input:focus, select:focus {
     border-radius: 0 0 20px 20px;
 }
 
-/* Fin de la Corrección 1 */
-
-
 .wally-table {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1065,7 +1069,6 @@ input:focus, select:focus {
         grid-column: span 1;
     }
 
-    /* Responsive para el nuevo modal de operaciones */
     #operationModal .modal-content {
         width: 98%;
         max-height: 95vh;
@@ -1081,7 +1084,7 @@ input:focus, select:focus {
     }
 
     #operationModal .form-right {
-        border-bottom: 1px solid var(--border-color); /* Añadido para separación en móvil */
+        border-bottom: 1px solid var(--border-color);
     }
 
     #operationModal .form-row {
@@ -1100,7 +1103,6 @@ input:focus, select:focus {
         width: 100%;
     }
 
-    /* Responsive para el modal de Wally */
     #wallyModal .modal-content {
         max-width: 98%;
     }
@@ -1110,7 +1112,6 @@ input:focus, select:focus {
     }
 }
 
-/* Solo la sección de LOTE tendrá scroll vertical */
 .lote-scroll {
     max-height: 80px;
     overflow-y: auto;
@@ -1120,17 +1121,14 @@ input:focus, select:focus {
     padding: 2px 4px;
 }
 
-/* Evita que la fila "estire" el contenido hacia el centro */
 #tablaOperaciones td {
     vertical-align: top;
 }
 
-/* Eliminar el estilo del botón "Información adicional" anterior */
 .toggle-info-btn {
-    display: none; /* Ocultar el botón antiguo */
+    display: none;
 }
 
-/* Estilo para que el input se vea como los otros valores */
 .wally-input {
     font-size: 20px;
     font-weight: 700;
@@ -1143,7 +1141,6 @@ input:focus, select:focus {
     transition: all var(--transition-speed) ease;
 }
 
-/* Cuando está editable */
 .wally-input:not([readonly]) {
     border-bottom: 2px solid var(--info);
     background: var(--bg-secondary);
@@ -1151,7 +1148,6 @@ input:focus, select:focus {
     padding: 2px 4px;
 }
 
-/* Botón de editar */
 .edit-icon {
     background: none;
     border: none;
@@ -1235,7 +1231,6 @@ input:focus, select:focus {
     100% { box-shadow: 0 0 0 0 rgba(245, 101, 101, 0); }
 }
 
-/* ===== MODIFICACIÓN: Transición para Panel IA ===== */
 #aiPanel {
     position: absolute;
     bottom: 70px;
@@ -1246,12 +1241,10 @@ input:focus, select:focus {
     border-radius: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    display: flex; /* Mantener flex para la estructura interna */
+    display: flex; 
     flex-direction: column;
     overflow: hidden;
     backdrop-filter: blur(10px);
-
-    /* Estado inicial para transición */
     opacity: 0;
     visibility: hidden;
     transform: translateY(15px) scale(0.98);
@@ -1259,7 +1252,6 @@ input:focus, select:focus {
 }
 
 #aiPanel.show {
-    /* Estado visible */
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
@@ -1307,8 +1299,8 @@ input:focus, select:focus {
 
 #aiNotifications {
     flex: 1;
-    overflow-y: auto; /* Asegura el scroll */
-    max-height: 350px; /* Ajustado para mostrar más notificaciones */
+    overflow-y: auto; 
+    max-height: 350px; 
     padding: 10px;
 }
 
@@ -1332,8 +1324,8 @@ input:focus, select:focus {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 12px; /* Aumentado el padding */
-    margin-bottom: 10px; /* Aumentado el margin */
+    padding: 12px; 
+    margin-bottom: 10px; 
     position: relative;
     animation: slideIn var(--transition-speed) ease-out;
     transition: all var(--transition-speed) ease;
@@ -1346,45 +1338,45 @@ input:focus, select:focus {
 
 .notification.info { border-left: 4px solid var(--info); }
 .notification.success { border-left: 4px solid var(--success); }
-.notification.warning { border-left: 44px solid var(--warning); }
+.notification.warning { border-left: 4px solid var(--warning); }
 .notification.danger { border-left: 4px solid var(--danger); }
 
 .notification-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px; /* Aumentado el margin */
+    margin-bottom: 8px; 
 }
 
 .notification-title {
     font-weight: 600;
-    font-size: 14px; /* Aumentado el tamaño de fuente */
+    font-size: 14px; 
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 8px; /* Aumentado el gap */
+    gap: 8px; 
 }
 
 .notification-time {
-    font-size: 11px; /* Aumentado el tamaño de fuente */
+    font-size: 11px; 
     color: #a0aec0;
 }
 
 .notification-content {
-    font-size: 13px; /* Aumentado el tamaño de fuente */
+    font-size: 13px; 
     color: var(--text-primary);
-    line-height: 1.4; /* Aumentado el line-height */
+    line-height: 1.4; 
 }
 
 .notification-metrics {
-    margin-top: 10px; /* Aumentado el margin */
-    padding: 10px; /* Aumentado el padding */
+    margin-top: 10px; 
+    padding: 10px; 
     background: rgba(102, 126, 234, 0.1);
     border-radius: 8px;
     font-family: 'Courier New', monospace;
-    font-size: 12px; /* Aumentado el tamaño de fuente */
-    white-space: pre-wrap; /* Permite saltos de línea en el contenido */
-    word-break: break-word; /* Rompe palabras largas */
+    font-size: 12px; 
+    white-space: pre-wrap; 
+    word-break: break-word; 
 }
 
 @keyframes slideIn {
@@ -1435,7 +1427,6 @@ input:focus, select:focus {
     background: #3182ce;
 }
 
-/* Dashboard de métricas en tiempo real */
 #aiMetrics {
     padding: 15px 20px;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
@@ -1474,7 +1465,6 @@ input:focus, select:focus {
 .metric-value.negative { color: var(--danger); }
 .metric-value.warning { color: var(--warning); }
 
-/* Responsive para el centro de operaciones */
 @media (max-width: 768px) {
     #aiPanel {
         width: 95vw;
@@ -1482,7 +1472,6 @@ input:focus, select:focus {
     }
 }
 
-/* Ocultar scrollbar pero mantener funcionalidad */
 #aiNotifications::-webkit-scrollbar {
     width: 4px;
 }
@@ -1500,13 +1489,12 @@ input:focus, select:focus {
     background: rgba(160, 174, 192, 0.5);
 }
 
-/* Estilos para el buscador y filtros */
 .filter-controls {
-    display: grid; /* Cambiado a grid */
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Columnas flexibles */
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
     gap: 15px;
     align-items: center;
-    flex-wrap: wrap; /* Mantenido para compatibilidad en caso de que no quepan */
+    flex-wrap: wrap; 
     padding: 15px 30px;
     background: var(--bg-secondary);
     border-bottom: 2px solid var(--border-color);
@@ -1520,8 +1508,8 @@ input:focus, select:focus {
     background: var(--bg-primary);
     color: var(--text-primary);
     font-size: 14px;
-    min-width: unset; /* Eliminar min-width fijo */
-    width: 100%; /* Asegurar que ocupen el 100% de su celda en el grid */
+    min-width: unset; 
+    width: 100%; 
 }
 
 .filter-controls input[type="text"]:focus,
@@ -1531,24 +1519,23 @@ input:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
-/* Estilos para el sistema de calificación */
 .rating-stars {
     display: flex;
-    justify-content: center; /* Centrar las estrellas */
-    gap: 10px; /* Aumentar el espacio entre estrellas */
-    font-size: 40px; /* Hacer las estrellas más grandes */
+    justify-content: center; 
+    gap: 10px; 
+    font-size: 40px; 
     cursor: pointer;
-    margin-top: 10px; /* Espacio superior */
-    margin-bottom: 20px; /* Espacio inferior */
+    margin-top: 10px; 
+    margin-bottom: 20px; 
 }
 
 .rating-stars .star {
-    color: #ccc; /* Color de estrella vacía */
+    color: #ccc; 
     transition: color var(--transition-speed);
 }
 
 .rating-stars .star.selected {
-    color: #ffc107; /* Color de estrella seleccionada */
+    color: #ffc107; 
 }
 
 .user-rating {
@@ -1562,7 +1549,6 @@ input:focus, select:focus {
     color: #ffc107;
 }
 
-/* Estilos para la sección de calificaciones */
 #ratingsSection {
     padding: 25px 30px;
 }
@@ -1603,25 +1589,20 @@ input:focus, select:focus {
     background-color: var(--card-hover);
 }
 
-/* Centrar etiquetas en el modal de calificación */
 #ratingModal .form-group label {
     text-align: center;
     width: 100%;
-    font-size: 1.1rem; /* Aumentar tamaño de fuente */
-    margin-bottom: 15px; /* Más espacio */
+    font-size: 1.1rem; 
+    margin-bottom: 15px; 
 }
 
-/*
-    INICIO DE LA CORRECCIÓN PARA EL MODAL DE CALIFICACIÓN
-    Aseguramos que el modal tenga un fondo y no sea transparente.
-*/
 #ratingModal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semi-transparente */
+    background: rgba(0, 0, 0, 0.6); 
     z-index: 1000;
     backdrop-filter: blur(5px);
     display: flex;
@@ -1638,21 +1619,21 @@ input:focus, select:focus {
 }
 
 #ratingModal .modal-content {
-    background: var(--bg-primary); /* Fondo del contenido del modal */
+    background: var(--bg-primary); 
     border-radius: 20px;
     box-shadow: 
         0 25px 50px -12px rgba(0, 0, 0, 0.25),
         0 0 0 1px rgba(255, 255, 255, 0.1);
     width: 95%;
-    max-width: 500px; /* Ancho máximo para el modal de calificación */
-    padding: 30px; /* Añadido padding para el contenido */
+    max-width: 500px; 
+    padding: 30px; 
     transform: scale(0.95);
     transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; /* Usar flexbox para centrar el contenido interno */
+    display: flex; 
     flex-direction: column;
-    align-items: center; /* Centrar horizontalmente */
-    justify-content: center; /* Centrar verticalmente */
-    text-align: center; /* Asegurar que el texto también se centre */
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
 }
 
 #ratingModal.show .modal-content {
@@ -1660,17 +1641,17 @@ input:focus, select:focus {
 }
 
 #ratingModal .modal-header {
-    background: none; /* No necesitamos un header con gradiente para este modal simple */
+    background: none; 
     padding: 0;
     margin-bottom: 20px;
-    display: block; /* Para que el título ocupe su propio espacio */
+    display: block; 
     width: 100%;
 }
 
 #ratingModal .modal-title {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-primary); /* Color del título */
+    color: var(--text-primary); 
     margin-bottom: 15px;
 }
 
@@ -1692,10 +1673,10 @@ input:focus, select:focus {
 }
 
 #ratingModal .modal-body {
-    padding: 0; /* El padding ya está en .modal-content */
-    max-height: unset; /* No limitar la altura si el contenido es pequeño */
-    overflow-y: visible; /* Permitir que el contenido se muestre sin scroll */
-    width: 100%; /* Asegurar que ocupe el ancho disponible */
+    padding: 0; 
+    max-height: unset; 
+    overflow-y: visible; 
+    width: 100%; 
 }
 
 #ratingModal .modal-buttons {
@@ -1703,14 +1684,10 @@ input:focus, select:focus {
     margin-top: 20px;
     background: none;
     border-top: none;
-    justify-content: center; /* Centrar los botones */
+    justify-content: center; 
     width: 100%;
 }
-/*
-    FIN DE LA CORRECCIÓN PARA EL MODAL DE CALIFICACIÓN
-*/
 
-/* Estilos para la sección de autenticación */
 #authSection {
     display: flex;
     justify-content: center;
@@ -1792,7 +1769,6 @@ input:focus, select:focus {
     margin-top: 20px;
     font-weight: 500;
 }
-/* Contenedor de Toasts */
 #toast-container {
     position: fixed;
     top: 20px;
@@ -1803,7 +1779,6 @@ input:focus, select:focus {
     gap: 10px;
 }
 
-/* Estilo base del Toast */
 .toast {
     background-color: var(--bg-primary);
     color: var(--text-primary);
@@ -1823,7 +1798,6 @@ input:focus, select:focus {
     border-left: 5px solid;
 }
 
-/* Tipos de Toast */
 .toast.success {
     border-color: var(--success);
 }
@@ -1836,30 +1810,26 @@ input:focus, select:focus {
     border-color: var(--info);
 }
 
-/* Animación de entrada */
 .toast.show {
     opacity: 1;
     transform: translateX(0);
 }
 
-/* Animación de salida (opcional, se puede manejar con JS) */
 .toast.hide {
     opacity: 0;
     transform: translateX(100%);
 }
 
-/* Iconos dentro del Toast */
 .toast .icon {
     font-size: 1.2em;
 }
 
-/* Nuevos estilos para secciones colapsables en modales (mantener para Wally modal) */
 .collapsible-section {
     background: var(--bg-secondary);
     border-radius: 15px;
     border: 1px solid var(--border-color);
     margin-bottom: 15px;
-    overflow: hidden; /* Para que la transición de altura funcione correctamente */
+    overflow: hidden; 
 }
 
 .collapsible-section .section-header {
@@ -1904,16 +1874,14 @@ input:focus, select:focus {
 }
 
 .collapsible-section.active .section-content {
-    max-height: 500px; /* Suficientemente grande para contener el contenido */
+    max-height: 500px; 
     padding: 25px;
 }
 
-/* Ajustes para el form-grid dentro de las secciones colapsables */
 .collapsible-section .form-grid {
-    padding-top: 0; /* Eliminar padding superior si ya lo tiene el section-content */
+    padding-top: 0; 
 }
 
-/* New Modal Styles (Config and User Profile) */
 #configModal .modal-content,
 #userProfileModal .modal-content {
     background: var(--bg-primary);
@@ -1922,7 +1890,7 @@ input:focus, select:focus {
         0 25px 50px -12px rgba(0, 0, 0, 0.25),
         0 0 0 1px rgba(255, 255, 255, 0.1);
     width: 95%;
-    max-width: 800px; /* Adjust max-width as needed */
+    max-width: 800px; 
     max-height: 90vh;
     overflow: hidden;
     transform: scale(0.95);
@@ -2008,7 +1976,6 @@ input:focus, select:focus {
     border-radius: 0 0 20px 20px;
 }
 
-/* Form Sections within Modals */
 .form-sections {
     display: flex;
     flex-direction: column;
@@ -2040,7 +2007,6 @@ input:focus, select:focus {
     gap: 15px;
 }
 
-/* Sortable List for Payment Methods */
 .sortable-list {
     list-style: none;
     padding: 0;
@@ -2091,7 +2057,6 @@ input:focus, select:focus {
     opacity: 1;
 }
 
-/* Profit Goal Progress Bar */
 .progress-bar-container {
     width: 100%;
     background-color: var(--bg-tertiary);
@@ -2109,7 +2074,6 @@ input:focus, select:focus {
     transition: width 0.5s ease-in-out;
 }
 
-/* User Profile Modal Specific Styles */
 .profile-summary {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2152,15 +2116,14 @@ input:focus, select:focus {
 
 #userProfileModal .btn-primary {
     margin-top: 15px;
-    width: auto; /* Override full width from general btn style */
+    width: auto; 
     padding: 10px 20px;
 }
 
 .profile-history-table {
-    max-height: 300px; /* Limit height for history table */
+    max-height: 300px; 
 }
 
-/* Make username clickable in main table and ratings table */
 .clickable-username {
     cursor: pointer;
     color: var(--info);
@@ -2171,7 +2134,6 @@ input:focus, select:focus {
     color: #3182ce;
 }
 
-/* Responsive adjustments for new modals */
 @media (max-width: 768px) {
     #configModal .modal-content,
     #userProfileModal .modal-content {
@@ -2187,22 +2149,21 @@ input:focus, select:focus {
     }
 }
 
-/* Estilos para el modal de Brecha por Banco */
 #bankBreachModal {
-    display: none; /* Oculto por defecto */
+    display: none; 
     position: fixed;
-    z-index: 1100; /* Superior a otros modales */
+    z-index: 1100; 
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow-y: auto; /* Solo scroll vertical */
-    background-color: rgba(0,0,0,0.5); /* Fondo semi-transparente */
+    overflow-y: auto; 
+    background-color: rgba(0,0,0,0.5); 
     transition: opacity var(--transition-speed) ease;
 }
 
 #bankBreachModal.show {
-    display: flex; /* Cambiado a flex para centrar */
+    display: flex; 
     align-items: center;
     justify-content: center;
     opacity: 1;
@@ -2211,38 +2172,36 @@ input:focus, select:focus {
 #bankBreachModal .modal-content {
     background-color: var(--background);
     margin: 2% auto;
-    padding: 20px 25px; /* Reducido padding */
+    padding: 20px 25px; 
     border-radius: 12px;
-    width: 90%; /* Reducido para mejor ajuste */
-    max-width: 700px; /* Reducido max-width para mejor compacidad */
+    width: 90%; 
+    max-width: 700px; 
     box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     color: var(--text-primary);
     font-family: 'Inter', sans-serif;
     position: relative;
-    overflow-x: visible; /* Evitar scroll horizontal */
+    overflow-x: visible; 
 }
 
-/* Encabezado del modal */
 #bankBreachModal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px; /* Reducido margin */
+    margin-bottom: 15px; 
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 8px; /* Reducido padding */
+    padding-bottom: 8px; 
 }
 
 #bankBreachModal .modal-header .modal-title {
-    font-size: 1.6rem; /* Reducido tamaño */
+    font-size: 1.6rem; 
     font-weight: 700;
     color: var(--primary);
 }
 
-/* Botón de cierre */
 #bankBreachModal .close-btn {
     background: transparent;
     border: none;
-    font-size: 1.8rem; /* Reducido tamaño */
+    font-size: 1.8rem; 
     font-weight: bold;
     cursor: pointer;
     color: var(--text-primary);
@@ -2253,45 +2212,42 @@ input:focus, select:focus {
     color: var(--danger);
 }
 
-/* Cuerpo del modal */
 #bankBreachModal .modal-body {
-    max-height: 60vh; /* Reducido para mejor ajuste */
+    max-height: 60vh; 
     overflow-y: auto;
-    padding-right: 5px; /* Reducido padding */
+    padding-right: 5px; 
 }
 
-/* Tabla dentro del modal */
 #bankBreachModal table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem; /* Reducido tamaño de fuente */
+    font-size: 0.95rem; 
     color: var(--text-primary);
-    table-layout: fixed; /* Para evitar que columnas se expandan demasiado */
+    table-layout: fixed; 
 }
 
 #bankBreachModal thead th {
-    padding: 10px 12px; /* Reducido padding */
+    padding: 10px 12px; 
     text-align: left;
     word-wrap: break-word;
-    font-size: 0.9rem; /* Tamaño de fuente específico para headers */
+    font-size: 0.9rem; 
     font-weight: 600;
 }
 
-/* Modificación: Ajustar el ancho de las celdas para mejor distribución */
-#bankBreachModal thead th:nth-child(1) { /* Método de Pago */
-    width: 35%; /* Aumentado para nombres largos */
+#bankBreachModal thead th:nth-child(1) { 
+    width: 35%; 
 }
 
-#bankBreachModal thead th:nth-child(2) { /* Prom. Compra */
+#bankBreachModal thead th:nth-child(2) { 
     width: 20%;
 }
 
-#bankBreachModal thead th:nth-child(3) { /* Prom. Venta */
+#bankBreachModal thead th:nth-child(3) { 
     width: 20%;
 }
 
-#bankBreachModal thead th:nth-child(4) { /* Brecha */
-    width: 25%; /* Reducido */
+#bankBreachModal thead th:nth-child(4) { 
+    width: 25%; 
 }
 
 #bankBreachModal tbody {
@@ -2308,14 +2264,13 @@ input:focus, select:focus {
 }
 
 #bankBreachModal tbody td {
-    padding: 8px 12px; /* Significativamente reducido */
+    padding: 8px 12px; 
     border-bottom: 1px solid var(--border-color);
-    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 0.9rem; /* Tamaño consistente */
+    font-size: 0.9rem; 
 }
-/* Botones en el modal */
 #bankBreachModal .modal-buttons {
     margin-top: 25px;
     text-align: right;
@@ -2339,7 +2294,6 @@ input:focus, select:focus {
     background-color: var(--secondary-dark);
 }
 
-/* Para modo oscuro (si usas data-theme="dark") */
 body[data-theme="dark"] #bankBreachModal .modal-content {
     background-color: #1a202c;
     color: #e2e8f0;
@@ -2371,14 +2325,12 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
     background-color: #2d3748;
 }
 
-/* Responsive: en pantallas muy grandes, limitar ancho máximo */
 @media (min-width: 1400px) {
     #bankBreachModal .modal-content {
         max-width: 1100px;
     }
 }
 
-/* Estilos para el modal de Lotes */
 #lotDetailsModal {
     display: none;
     position: fixed;
@@ -2483,7 +2435,6 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
     text-align: right;
 }
 
-/* Estilos para el modal de Pendientes */
 #pendingDetailsModal {
     display: none;
     position: fixed;
@@ -2664,12 +2615,10 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
     color: var(--text-primary);
 }
 
-/* Specific colors for breach cards */
 .info-card.breach-positive .info-card-value { color: var(--success); }
 .info-card.breach-negative .info-card-value { color: var(--danger); }
 .info-card.breach-neutral .info-card-value { color: var(--warning); }
 
-/* Pending Details Grid */
 .pending-summary-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2701,9 +2650,9 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
 }
 
 .operation-list {
-    max-height: 250px; /* Limit height to avoid scroll */
-    overflow-y: auto; /* Add scroll if content exceeds height */
-    padding-right: 5px; /* Space for scrollbar */
+    max-height: 250px; 
+    overflow-y: auto; 
+    padding-right: 5px; 
 }
 
 .operation-list-item {
@@ -2724,14 +2673,13 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
     font-weight: 500;
     color: var(--text-muted);
     display: inline-block;
-    width: 80px; /* Align labels */
+    width: 80px; 
 }
 
 .operation-list-item .op-value {
     font-weight: 600;
 }
 
-/* Responsive adjustments for new modals */
 @media (max-width: 768px) {
     .info-cards-grid {
         grid-template-columns: 1fr;
@@ -2743,6 +2691,89 @@ body[data-theme="dark"] #bankBreachModal .modal-buttons .btn.btn-secondary:hover
     }
     
     .operation-list {
-        max-height: 200px; /* Adjust height for smaller screens */
+        max-height: 200px; 
     }
+}
+
+/* ===== NUEVOS ESTILOS PARA COMISIÓN POR ANUNCIO ===== */
+
+/* Contenedor del Switch */
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: -10px; /* Acercarlo al input de arriba */
+    margin-bottom: 15px;
+}
+
+.switch-container span {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* El switch en sí */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* El slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--success);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--success);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* Slider redondeado */
+.slider.round {
+    border-radius: 28px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Indicador en la tabla */
+.commission-indicator {
+    font-size: 11px;
+    color: var(--danger);
+    font-weight: 500;
+    margin-left: 5px;
 }
