@@ -142,28 +142,44 @@ let currentPendingData = {
 function loadOperations() {
     if (!currentUserId) return;
     
-    // onSnapshot nos da datos en TIEMPO REAL. 
-    // Si cambias un dato en otro navegador, se actualiza aquí automáticamente.
     db.collection('users').doc(currentUserId).collection('operations')
       .orderBy('timestamp', 'desc')
       .onSnapshot(snapshot => {
-          operations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Include doc.id
+          operations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           updateHistorySelector();
-          updateSummary(); // Llama a updateSummary que a su vez llama a applyFIFOForDate y renderTable
+          updateSummary();
       }, error => console.error("Error al cargar operaciones:", error));
 }
 
-// Modificar la función saveOperation()
 function saveOperation() {
     if (!currentUserId) return;
-    
+
+    const originalUsdc = parseFloat(document.getElementById('montoUsdc').value) || 0;
+    const operacion = document.getElementById('operacion').value;
+    const applyCommission = document.getElementById('applyAdCommissionSwitch').checked;
+    const commissionRate = userConfig.adCommission || 0;
+
+    let finalUsdc = originalUsdc;
+    let appliedCommission = 0;
+
+    // Se recalcula el monto USDC final a guardar
+    if (applyCommission && commissionRate > 0 && originalUsdc > 0) {
+        const commissionAmount = originalUsdc * (commissionRate / 100);
+        if (operacion === 'Compra') {
+            finalUsdc = originalUsdc - commissionAmount;
+        } else if (operacion === 'Venta') {
+            finalUsdc = originalUsdc + commissionAmount;
+        }
+        appliedCommission = commissionRate;
+    }
+
     const operation = {
         usuario: document.getElementById('usuario').value,
         referencia: document.getElementById('referencia').value,
         operacion: document.getElementById('operacion').value,
         tasa: parseFloat(document.getElementById('tasa').value),
         metodoPago: document.getElementById('metodoPago').value,
-        montoUsdc: parseFloat(document.getElementById('montoUsdc').value),
+        montoUsdc: finalUsdc, // <-- Aquí se guarda el monto USDC correcto
         montoBs: parseFloat(document.getElementById('montoBs').value),
         comisionVes: parseFloat(document.getElementById('comisionVes').value) || 0,
         total: parseFloat(document.getElementById('total').value),
@@ -172,24 +188,25 @@ function saveOperation() {
         lote: document.getElementById('lote').value,
         estatus: document.getElementById('estatus').value,
         fecha: currentDate,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        adCommissionPercent: appliedCommission 
     };
 
     if (!operation.usuario || !operation.referencia || !operation.operacion || 
-        isNaN(operation.tasa) || isNaN(operation.montoUsdc) || !operation.metodoPago || !operation.estatus) {
+        isNaN(operation.tasa) || isNaN(originalUsdc) || !operation.metodoPago || !operation.estatus) {
         showToast('Por favor, complete todos los campos obligatorios.', 'error');
         return;
     }
-    
-    const operationId = editingIndex > -1 ? operations[editingIndex].id : db.collection('users').doc(currentUserId).collection('operations').doc().id; // Generate new ID if not editing
+
+    const operationId = editingIndex > -1 ? operations[editingIndex].id : db.collection('users').doc(currentUserId).collection('operations').doc().id;
     operation.id = operationId;
 
     db.collection('users').doc(currentUserId).collection('operations').doc(operationId).set(operation, { merge: true })
         .then(() => {
             console.log("Operación guardada en Firestore");
             closeModal();
-            showToast('Operación guardada con éxito', 'success'); // Notificación de éxito
-            
+            showToast('Operación guardada con éxito', 'success');
+
             lastSavedUser = operation.usuario;
             lastSavedOperationType = 'main';
             openRatingModal(operation.usuario);
@@ -204,11 +221,11 @@ function saveOperation() {
         })
         .catch(error => {
             console.error("Error al guardar operación:", error);
-            showToast('Error al guardar operación', 'error'); // Notificación de error
+            showToast('Error al guardar operación', 'error');
         });
 }
 
-// Modificar la función deleteOperation()
+
 function deleteOperation(index) {
     if (!currentUserId || !confirm('¿Está seguro de eliminar esta operación?')) return;
     
@@ -216,29 +233,28 @@ function deleteOperation(index) {
     db.collection('users').doc(currentUserId).collection('operations').doc(operationId).delete()
         .then(() => {
             console.log("Operación eliminada de Firestore");
-            showToast('Operación eliminada', 'info'); // Notificación de eliminación
+            showToast('Operación eliminada', 'info');
         })
         .catch(error => {
             console.error("Error al eliminar operación:", error);
-            showToast('Error al eliminar operación', 'error'); // Notificación de error
+            showToast('Error al eliminar operación', 'error');
         });
 }
 
-// --- Funciones para Wally Tech (Aplicar la misma lógica) ---
+// --- Funciones para Wally Tech ---
 
 function loadWallyOperations() {
     if (!currentUserId) return;
     db.collection('users').doc(currentUserId).collection('wallyOperations')
       .orderBy('timestamp', 'desc')
       .onSnapshot(snapshot => {
-          wallyOperations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Include doc.id
+          wallyOperations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           updateWallyHistorySelector();
           renderWallyTables();
           updateWallySummary();
       }, error => console.error("Error al cargar operaciones Wally:", error));
 }
 
-// Modificar la función saveWallyOperation()
 function saveWallyOperation() {
     if (!currentUserId) return;
     const operacion = document.getElementById('wallyOperacion').value;
@@ -270,14 +286,14 @@ function saveWallyOperation() {
         return;
     }
 
-    const operationId = editingWallyIndex > -1 ? wallyOperations[editingWallyIndex].id : db.collection('users').doc(currentUserId).collection('wallyOperations').doc().id; // Generate new ID if not editing
+    const operationId = editingWallyIndex > -1 ? wallyOperations[editingWallyIndex].id : db.collection('users').doc(currentUserId).collection('wallyOperations').doc().id;
     operation.id = operationId;
 
     db.collection('users').doc(currentUserId).collection('wallyOperations').doc(operationId).set(operation, { merge: true })
         .then(() => {
             console.log("Operación Wally guardada en Firestore");
             closeWallyModal();
-            showToast('Operación Wally guardada con éxito', 'success'); // Notificación de éxito
+            showToast('Operación Wally guardada con éxito', 'success');
 
             lastSavedUser = operation.usuario;
             lastSavedOperationType = 'wally';
@@ -285,11 +301,10 @@ function saveWallyOperation() {
         })
         .catch(error => {
             console.error("Error al guardar operación Wally:", error);
-            showToast('Error al guardar operación Wally', 'error'); // Notificación de error
+            showToast('Error al guardar operación Wally', 'error');
         });
 }
 
-// Modificar la función deleteWallyOperation()
 function deleteWallyOperation(index) {
     if (!currentUserId || !confirm('¿Está seguro de eliminar esta operación Wally?')) return;
     
@@ -297,22 +312,22 @@ function deleteWallyOperation(index) {
     db.collection('users').doc(currentUserId).collection('wallyOperations').doc(operationId).delete()
         .then(() => {
             console.log("Operación Wally eliminada de Firestore");
-            showToast('Operación Wally eliminada', 'info'); // Notificación de eliminación
+            showToast('Operación Wally eliminada', 'info');
         })
         .catch(error => {
             console.error("Error al eliminar operación Wally:", error);
-            showToast('Error al eliminar operación Wally', 'error'); // Notificación de error
+            showToast('Error al eliminar operación Wally', 'error');
         });
 }
 
-// --- Funciones para Calificaciones (Un poco diferente) ---
+// --- Funciones para Calificaciones y almacenamiento ---
 
 function loadUserRatings() {
     if (!currentUserId) return;
     db.collection('users').doc(currentUserId).collection('ratings').onSnapshot(snapshot => {
-        userRatings = {}; // Reiniciamos
+        userRatings = {};
         snapshot.forEach(doc => {
-            userRatings[doc.id] = doc.data().ratings; // El ID del doc es el nombre de usuario
+            userRatings[doc.id] = doc.data().ratings;
         });
         renderRatingsTable();
     });
@@ -320,14 +335,11 @@ function loadUserRatings() {
 
 function saveUserRatings() {
     if (!currentUserId) return;
-    // Guardamos cada usuario calificado como un documento separado
     for (const userName in userRatings) {
         db.collection('users').doc(currentUserId).collection('ratings').doc(userName)
           .set({ ratings: userRatings[userName] });
     }
 }
-
-// --- Funciones de almacenamiento específico (Wally Valor Inicial) ---
 
 function saveWallyValorInicial() {
     if (!currentUserId) return;
@@ -335,7 +347,6 @@ function saveWallyValorInicial() {
     const value = parseFloat(input.value) || 0;
     const dateKey = `valorInicial_${currentWallyDate}`;
 
-    // Guardamos esto en un documento especial de configuración del usuario
     db.collection('users').doc(currentUserId).collection('settings').doc('wally').set({ [dateKey]: value.toFixed(2) }, { merge: true })
         .then(() => {
             input.readOnly = true;
@@ -357,11 +368,9 @@ function loadWallyValorInicial() {
                 input.readOnly = true;
                 document.getElementById("editWallyIniBtn").style.display = "inline";
             } else {
-                // Lógica para buscar el valor del día anterior si este no existe
                 const prevDayActualValue = localStorage.getItem(`wallyValorActual_${getWallyPreviousDate(currentWallyDate)}`);
                 if (prevDayActualValue) {
                     input.value = prevDayActualValue;
-                    // También lo guardamos en Firestore para el día actual si se carga del día anterior
                     db.collection('users').doc(currentUserId).collection('settings').doc('wally').set({ [dateKey]: prevDayActualValue }, { merge: true });
                     input.readOnly = true;
                     document.getElementById('editWallyIniBtn').style.display = 'inline';
@@ -376,14 +385,9 @@ function loadWallyValorInicial() {
 }
 
 // ========================================================
-// ===== 4. CÓDIGO ORIGINAL (con pequeños ajustes) =====
+// ===== 4. CÓDIGO DE UI, CÁLCULOS Y RENDERIZADO =====
 // ========================================================
-// Aquí va el resto de tu código JavaScript. La mayoría de las funciones
-// de la UI, cálculos y renderizado (como renderTable, updateSummary, openModal, etc.)
-// no necesitan grandes cambios, ya que ahora operan sobre los arrays locales
-// que son actualizados en tiempo real por los listeners de Firestore.
 
-// Funciones de navegación entre secciones
 function switchToWally() {
     document.getElementById('mainSection').classList.remove('active');
     document.getElementById('ratingsSection').classList.remove('active');
@@ -405,10 +409,9 @@ function switchToRatings() {
     document.getElementById('wallySection').classList.remove('active');
     document.getElementById('ratingsSection').classList.add('active');
     currentSection = 'ratings';
-    renderRatingsTable(); // Asegurarse de renderizar la tabla de calificaciones
+    renderRatingsTable();
 }
 
-// Funciones de tema
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
@@ -438,14 +441,12 @@ function loadTheme() {
     updateThemeButtons(savedTheme);
 }
 
-// ===== MODIFICACIÓN: Funciones del modal principal =====
 function openModal() {
     editingIndex = -1;
     document.getElementById('modalTitle').textContent = 'Agregar Nueva Operación';
     clearForm();
-    populatePaymentMethods(); // Populate payment methods on modal open
+    populatePaymentMethods();
     document.getElementById('operationModal').classList.add('show');
-    // Asegurarse de que la sección de información adicional esté colapsada al abrir el modal
     document.getElementById('additionalInfoSection').classList.remove('active');
 }
 
@@ -454,32 +455,32 @@ function closeModal() {
     clearForm();
 }
 
-// Función para alternar secciones colapsables (ahora se usa en el modal principal también)
 function toggleCollapsibleSection(headerElement) {
     const section = headerElement.closest('.collapsible-section');
     section.classList.toggle('active');
 }
 
-// Modificar la función clearForm para el nuevo diseño del modal
 function clearForm() {
     const form = document.getElementById('operationModal');
     const inputs = form.querySelectorAll('input, select');
     inputs.forEach(input => {
-        input.value = '';
+        if (input.type !== 'checkbox') {
+            input.value = '';
+        } else {
+            input.checked = false;
+        }
         input.classList.remove('disabled-field');
         input.readOnly = false;
     });
 
-    // Limpiar los displays de cálculo
     document.getElementById('displayMontoBs').textContent = '0.00';
     document.getElementById('displayComision').textContent = '0.00';
     document.getElementById('displayTotal').textContent = '0.00';
+    document.getElementById('displayAdCommissionRow').style.display = 'none';
 
-    // Asegurarse de que la sección de información adicional esté colapsada
     document.getElementById('additionalInfoSection').classList.remove('active');
 }
 
-// ===== MODIFICACIÓN: Funciones del modal Wally =====
 function openWallyModal() {
     editingWallyIndex = -1;
     document.getElementById('wallyModalTitle').textContent = 'Agregar Operación Wally Tech';
@@ -502,45 +503,67 @@ function clearWallyForm() {
     updateWallyFields();
 }
 
-// Funciones de cálculo principal (CONSOLIDADO)
+// --- Funciones de Cálculo ---
+
 function calculateAll() {
     const tasa = parseFloat(document.getElementById('tasa').value) || 0;
-    const montoUsdc = parseFloat(document.getElementById('montoUsdc').value) || 0;
+    const montoUsdcOriginal = parseFloat(document.getElementById('montoUsdc').value) || 0;
     const operacion = document.getElementById('operacion').value;
     const metodoPago = document.getElementById('metodoPago').value;
-    
-    const montoBs = tasa * montoUsdc;
+    const applyCommission = document.getElementById('applyAdCommissionSwitch').checked;
+    const commissionRate = userConfig.adCommission || 0;
+
+    let montoUsdcFinal = montoUsdcOriginal;
+    let commissionAmountUsdc = 0;
+    const adCommissionRow = document.getElementById('displayAdCommissionRow');
+
+    // --- LÓGICA DE COMISIÓN POR ANUNCIO (EN USDC) ---
+    if (applyCommission && commissionRate > 0 && montoUsdcOriginal > 0) {
+        commissionAmountUsdc = montoUsdcOriginal * (commissionRate / 100);
+
+        if (operacion === 'Compra') {
+            // En Compra, recibes MENOS USDC.
+            montoUsdcFinal = montoUsdcOriginal - commissionAmountUsdc;
+            document.getElementById('displayAdCommissionLabel').textContent = `Comisión Anuncio (débito):`;
+            document.getElementById('displayAdCommission').textContent = `-${commissionAmountUsdc.toFixed(3)} (${montoUsdcFinal.toFixed(3)})`;
+        } else if (operacion === 'Venta') {
+            // En Venta, envías MÁS USDC.
+            montoUsdcFinal = montoUsdcOriginal + commissionAmountUsdc;
+            document.getElementById('displayAdCommissionLabel').textContent = `Comisión Anuncio (costo):`;
+            document.getElementById('displayAdCommission').textContent = `+${commissionAmountUsdc.toFixed(3)} (${montoUsdcFinal.toFixed(3)})`;
+        }
+        adCommissionRow.style.display = 'flex';
+    } else {
+        adCommissionRow.style.display = 'none';
+    }
+
+    // El cálculo en Bs SIEMPRE se basa en el monto original que ve la contraparte.
+    const montoBs = tasa * montoUsdcOriginal;
     let comisionVes = 0;
-    
+
+    // --- LÓGICA DE COMISIÓN BANCARIA (EN VES) ---
+    // Solo aplica si estás COMPRANDO y ENVIANDO un Pagomovil.
     if (operacion === 'Compra' && metodoPago === 'Pagomovil') {
         comisionVes = montoBs * 0.003;
     }
-    
+
+    // El total en Bs es el monto base más la comisión bancaria (si aplica).
     const total = montoBs + comisionVes;
-    
-    // Actualizar displays
+
+    // --- ACTUALIZACIÓN DE LA PANTALLA Y VALORES OCULTOS ---
     document.getElementById('displayMontoBs').textContent = montoBs.toFixed(2);
     document.getElementById('displayComision').textContent = comisionVes.toFixed(2);
     document.getElementById('displayTotal').textContent = total.toFixed(2);
-    
-    // Actualizar campos ocultos para compatibilidad con saveOperation
+
     document.getElementById('montoBs').value = montoBs.toFixed(2);
     document.getElementById('comisionVes').value = comisionVes.toFixed(2);
     document.getElementById('total').value = total.toFixed(2);
 }
 
 function updateFeeField() {
-    // Esta función ahora solo llama a calculateAll para recalcular todo
     calculateAll();
 }
 
-// Las funciones calculateMontoBs y calculateTotal ya no son necesarias individualmente
-// function calculateMontoBs() { ... }
-// function calculateFee() { ... }
-// function calculateTotal() { ... }
-
-
-// Funciones de cálculo Wally
 function updateWallyFields() {
     const operacion = document.getElementById('wallyOperacion').value;
     
@@ -595,31 +618,27 @@ async function pasteSpecial() {
         const tasaMatch = text.match(/Precio:\s*([\d\.]+)/i);
         const estatusMatch = text.match(/Transacción\s+completada/i);
 
-        // Regex para Compra: Monto recibido: X.XX USDC
         const montoRecibidoUsdcMatch = text.match(/Monto recibido:\s*([\d\.,]+)\s*USDC/i);
-        // Regex para Venta: Monto enviado: X.XX USDC
         const montoEnviadoUsdcMatch = text.match(/Monto enviado:\s*([\d\.,]+)\s*USDC/i);
 
         if (usuarioMatch) document.getElementById("usuario").value = usuarioMatch[1];
         if (refMatch) document.getElementById("referencia").value = refMatch[1];
-        if (tasaMatch) document.getElementById("tasa").value = tasaMatch[1].replace(',', '.'); // Reemplazar coma por punto
+        if (tasaMatch) document.getElementById("tasa").value = tasaMatch[1].replace(',', '.');
 
         if (montoRecibidoUsdcMatch) {
-            // Es una operación de Compra
             document.getElementById("operacion").value = "Compra";
             document.getElementById("montoUsdc").value = montoRecibidoUsdcMatch[1].replace(',', '.');
         } else if (montoEnviadoUsdcMatch) {
-            // Es una operación de Venta
             document.getElementById("operacion").value = "Venta";
             document.getElementById("montoUsdc").value = montoEnviadoUsdcMatch[1].replace(',', '.');
         } else {
             showToast("No se pudo determinar el tipo de operación (Compra/Venta) o el monto USDC.", "warning");
-            return; // Salir si no se puede determinar el tipo de operación
+            return;
         }
 
         if (estatusMatch) document.getElementById("estatus").value = "Completado";
 
-        calculateAll(); // Llamar a la función consolidada
+        calculateAll();
         showToast("Pegado especial exitoso.", "success");
     } catch (err) {
         showToast("No se pudo leer el portapapeles o el formato es incorrecto.", "error");
@@ -670,7 +689,8 @@ async function pasteSpecialWally() {
     }
 }
 
-// Funciones de renderizado principal
+// --- Funciones de Renderizado ---
+
 function renderTable() {
     const tbody = document.getElementById('operationsTable');
     const currentOps = operations.filter(op => op.fecha === currentDate);
@@ -694,20 +714,21 @@ function renderTable() {
         const globalIndex = operations.indexOf(op);
         const avgRating = calculateAverageRating(op.usuario);
         const ratingHtml = avgRating > 0 ? `<span class="user-rating">${avgRating.toFixed(1)} <span class="star-icon">★</span></span>` : '';
+        const commissionIndicator = op.adCommissionPercent > 0 ? `<span class="commission-indicator">(-${op.adCommissionPercent}%)</span>` : '';
 
         return `
             <tr class="${op.operacion.toLowerCase()}">
                 <td><span class="clickable-username" onclick="openUserProfileModal('${op.usuario}')">${op.usuario}</span> ${ratingHtml}</td>
                 <td>${op.referencia}</td>
                 <td>${op.operacion}</td>
-                <td>${op.tasa.toFixed(2)}</td>
+                <td>${op.tasa.toFixed(3)}</td>
                 <td>${op.metodoPago}</td>
-                <td>${op.montoUsdc.toFixed(2)}</td>
-                <td>${op.montoBs.toFixed(2)}</td>
-                <td>${op.comisionVes.toFixed(2)}</td>
-                <td>${op.total.toFixed(2)}</td>
-                <td>${(op.ves || 0).toFixed(2)}</td>
-                <td>${(op.usdc || 0).toFixed(6)}</td>
+                <td>${op.montoUsdc.toFixed(3)} ${commissionIndicator}</td>
+                <td>${op.montoBs.toFixed(3)}</td>
+                <td>${op.comisionVes.toFixed(3)}</td>
+                <td>${op.total.toFixed(3)}</td>
+                <td>${(op.ves || 0).toFixed(3)}</td>
+                <td>${(op.usdc || 0).toFixed(3)}</td>
                 <td>
                     <div class="lote-scroll">${op.lote || ''}</div>
                 </td>
@@ -725,7 +746,6 @@ function filterOperations() {
     renderTable();
 }
 
-// Funciones de renderizado Wally
 function renderWallyTables() {
     const currentOps = wallyOperations.filter(op => op.fecha === currentWallyDate);
     
@@ -792,6 +812,39 @@ function filterWallyOperations() {
     renderWallyTables();
 }
 
+function editOperation(index) {
+    editingIndex = index;
+    const op = operations[index];
+    
+    document.getElementById('modalTitle').textContent = 'Editar Operación';
+    
+    let originalMontoUsdc = op.montoUsdc;
+    if (op.adCommissionPercent > 0) {
+        // Calcular el monto original antes de la comisión
+        originalMontoUsdc = op.montoUsdc / (1 - (op.adCommissionPercent / 100));
+        document.getElementById('applyAdCommissionSwitch').checked = true;
+    } else {
+        document.getElementById('applyAdCommissionSwitch').checked = false;
+    }
+    
+    document.getElementById('usuario').value = op.usuario;
+    document.getElementById('referencia').value = op.referencia;
+    document.getElementById('operacion').value = op.operacion;
+    document.getElementById('tasa').value = op.tasa;
+    document.getElementById('metodoPago').value = op.metodoPago;
+    document.getElementById('montoUsdc').value = originalMontoUsdc.toFixed(3);
+    
+    document.getElementById('ves').value = op.ves;
+    document.getElementById('usdc').value = op.usdc;
+    document.getElementById('lote').value = op.lote;
+    document.getElementById('estatus').value = op.estatus;
+    
+    calculateAll(); 
+    
+    document.getElementById('operationModal').classList.add('show');
+    document.getElementById('additionalInfoSection').classList.add('active');
+}
+
 function editWallyOperation(index) {
     if (typeof index !== 'number' || index < 0 || index >= wallyOperations.length) return;
     editingWallyIndex = index;
@@ -819,19 +872,20 @@ function editWallyOperation(index) {
     document.getElementById('wallyModal').classList.add('show');
 }
 
+// --- Lógica FIFO y Resúmenes ---
+
 function applyFIFOForDate(fecha) {
     const ops = operations
         .filter(x => x.fecha === fecha)
         .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-    // Resetear propiedades de lotes para el cálculo actual
     ops.forEach(o => {
         o._gainVes = 0;
         o._gainUsdc = 0;
-        o._assignedLots = []; // Lotes a los que esta operación de compra contribuye
-        o._remainingUsdc = (o.operacion === 'Compra') ? (Number(o.montoUsdc) || 0) : 0; // Solo para compras
-        o._lotConsumed = 0; // Cuánto de esta compra ha sido consumido por ventas
-        o._lotTotal = (o.operacion === 'Compra') ? (Number(o.montoUsdc) || 0) : 0; // Total de la compra para el lote
+        o._assignedLots = [];
+        o._remainingUsdc = (o.operacion === 'Compra') ? (Number(o.montoUsdc) || 0) : 0;
+        o._lotConsumed = 0;
+        o._lotTotal = (o.operacion === 'Compra') ? (Number(o.montoUsdc) || 0) : 0;
     });
 
     let purchaseQueue = ops
@@ -854,7 +908,7 @@ function applyFIFOForDate(fecha) {
         .sort((a, b) => a.timestamp - b.timestamp);
 
     let lotCounter = 1;
-    let currentLotsMap = new Map(); // Para almacenar el estado de los lotes en esta ejecución
+    let currentLotsMap = new Map();
 
     sales.forEach(sale => {
         let remainingToMatch = sale.montoUsdc;
@@ -862,12 +916,11 @@ function applyFIFOForDate(fecha) {
         sale.op._assignedLots = sale.op._assignedLots || [];
         sale.op._gainVes = sale.op._gainVes || 0;
         sale.op._gainUsdc = sale.op._gainUsdc || 0;
-        sale.op.lote = lotId; // Asignar el lote a la venta
+        sale.op.lote = lotId;
 
-        // Inicializar el lote en el mapa de lotes actuales
         currentLotsMap.set(lotId, {
             id: lotId,
-            montoTotal: 0, // Se llenará con las compras asociadas
+            montoTotal: 0,
             montoConsumido: 0,
             faltante: 100,
             estado: 'activo',
@@ -900,16 +953,13 @@ function applyFIFOForDate(fecha) {
             head.op._gainUsdc = (head.op._gainUsdc || 0) + gainUsdc;
             head.op._assignedLots = head.op._assignedLots || [];
             
-            // Actualizar el lote de la compra
             head.op._lotConsumed = (head.op._lotConsumed || 0) + consume;
 
-            // Formato para el campo lote de la compra: L1$monto$
             const lotEntryForPurchase = `${lotId}$${consume.toFixed(2)}$`;
             head.op._assignedLots.push(lotEntryForPurchase);
 
-            // Actualizar el lote actual en el mapa
-            currentLot.montoTotal += consume; // Sumar el monto de la compra al total del lote
-            currentLot.montoConsumido += consume; // Sumar el monto consumido por esta venta
+            currentLot.montoTotal += consume;
+            currentLot.montoConsumido += consume;
             currentLot.comprasAsociadas.push({
                 id: head.op.id,
                 monto: consume,
@@ -926,27 +976,22 @@ function applyFIFOForDate(fecha) {
         }
 
         if (remainingToMatch > 0) {
-            // Si queda algo por emparejar, significa que no hay compras suficientes.
-            // La ganancia para esta porción es 0, ya que no hay un costo de compra asociado.
-            // Esto ya está cubierto por la lógica de la IA de "Recompra Crítica".
             sale.op._gainVes += 0;
             sale.op._gainUsdc += 0;
         }
     });
 
-    // Finalizar el cálculo de lotes y actualizar el campo 'lote' de las compras
     ops.forEach(o => {
         if (o.operacion === 'Compra') {
             if (o._assignedLots && o._assignedLots.length > 0) {
                 o.lote = o._assignedLots.join(',');
             } else {
-                o.lote = ''; // Si no contribuyó a ningún lote, el campo lote está vacío
+                o.lote = '';
             }
         }
         o.ves = Number((o._gainVes || 0).toFixed(2));
         o.usdc = Number((o._gainUsdc || 0).toFixed(6));
 
-        // Limpiar propiedades temporales
         delete o._gainVes;
         delete o._gainUsdc;
         delete o._assignedLots;
@@ -955,21 +1000,18 @@ function applyFIFOForDate(fecha) {
         delete o._lotTotal;
     });
 
-    // Calcular el faltante y estado final de los lotes
     currentLotsMap.forEach(lot => {
         if (lot.montoTotal > 0) {
             lot.faltante = ((lot.montoTotal - lot.montoConsumido) / lot.montoTotal) * 100;
-            lot.estado = lot.faltante <= 0.01 ? 'cerrado' : 'activo'; // Considerar cerrado si es casi 0
+            lot.estado = lot.faltante <= 0.01 ? 'cerrado' : 'activo';
         } else {
-            // Lote creado por una venta sin compras asociadas aún
             lot.faltante = 100;
             lot.estado = 'activo';
         }
     });
 
-    currentLotsData = currentLotsMap; // Actualizar la variable global de lotes
+    currentLotsData = currentLotsMap;
 
-    // Calcular pendientes
     let totalComprado = 0;
     let totalVendido = 0;
     let recompraOps = [];
@@ -986,7 +1028,6 @@ function applyFIFOForDate(fecha) {
     const recompraPendiente = Math.max(0, totalVendido - totalComprado);
     const reventaPendiente = Math.max(0, totalComprado - totalVendido);
 
-    // Identificar operaciones que contribuyen a pendientes
     if (recompraPendiente > 0) {
         let tempVendido = totalVendido;
         ops.filter(op => op.operacion === 'Venta').sort((a, b) => b.timestamp - a.timestamp).forEach(op => {
@@ -1051,7 +1092,7 @@ function updateSummary() {
     document.getElementById('promVenta').textContent = promVenta.toFixed(2);
     document.getElementById('brecha').textContent = brecha.toFixed(2) + '%';
     
-    applyFIFOForDate(currentDate); // Esto actualiza las propiedades _gainVes, _gainUsdc y lote en las operaciones
+    applyFIFOForDate(currentDate);
 
     const gananciasVesSoloCompras = currentOps
         .filter(op => op.operacion === 'Compra')
@@ -1068,15 +1109,14 @@ function updateSummary() {
 
     document.getElementById('totalOps').textContent = currentOps.length;
     
-    // Actualizar nuevos summary-items
     const activeLotsCount = Array.from(currentLotsData.values()).filter(lot => lot.estado === 'activo').length;
     document.getElementById('activeLotsSummary').textContent = activeLotsCount;
     
     const totalPending = currentPendingData.recompra + currentPendingData.reventa;
     document.getElementById('pendingSummary').textContent = `${totalPending.toFixed(2)} USDC`;
 
-    renderTable(); // Renderizar la tabla después de que los lotes se hayan calculado
-    updateProfitGoalProgress(gananciasVesSoloCompras); // Update profit goal progress
+    renderTable();
+    updateProfitGoalProgress(gananciasVesSoloCompras);
 }
 
 function updateWallySummary() {
@@ -1090,13 +1130,12 @@ function updateWallySummary() {
     const totalEnvioUsdc_fromVentas = ventas.reduce((s, op) => s + (Number(op.envioUsdc) || 0), 0);
     const totalReciboUsd_fromVentas = ventas.reduce((s, op) => s + (Number(op.reciboUsd) || 0), 0);
 
-    const iniValue = parseFloat(document.getElementById('wallyValorInicialInput').value) || 0; // Leer del input
+    const iniValue = parseFloat(document.getElementById('wallyValorInicialInput').value) || 0;
     const valAct = iniValue + totalReciboUsdc_fromCompras + totalReciboUsd_fromVentas - totalEnvioUsd_fromCompras - totalEnvioUsdc_fromVentas;
 
     document.getElementById("wallyValorActual").textContent = `${valAct.toFixed(2)}`;
     
     localStorage.setItem(`wallyValorActual_${currentWallyDate}`, valAct.toFixed(2));
-    // No guardar en Firestore aquí, ya que el valor actual es calculado y no persistente directamente
 
     const totalGananciaUsdc = compras.reduce((s, op) => s + (Number(op.gananciaUsdc) || 0), 0);
     const totalGananciaUsd = ventas.reduce((s, op) => s + (Number(op.gananciaUsd) || 0), 0);
@@ -1105,35 +1144,7 @@ function updateWallySummary() {
         `${totalGananciaUsdc.toFixed(2)} USDC / ${totalGananciaUsd.toFixed(2)} USD`;
 }
 
-// Modificar la función editOperation para el nuevo diseño del modal
-function editOperation(index) {
-    editingIndex = index;
-    const op = operations[index];
-    
-    document.getElementById('modalTitle').textContent = 'Editar Operación';
-    document.getElementById('usuario').value = op.usuario;
-    document.getElementById('referencia').value = op.referencia;
-    document.getElementById('operacion').value = op.operacion;
-    document.getElementById('tasa').value = op.tasa;
-    document.getElementById('metodoPago').value = op.metodoPago;
-    document.getElementById('montoUsdc').value = op.montoUsdc;
-    
-    // Los campos montoBs, comisionVes, total ahora son calculados y mostrados en el display
-    document.getElementById('montoBs').value = op.montoBs;
-    document.getElementById('comisionVes').value = op.comisionVes;
-    document.getElementById('total').value = op.total;
-
-    document.getElementById('ves').value = op.ves;
-    document.getElementById('usdc').value = op.usdc;
-    document.getElementById('lote').value = op.lote;
-    document.getElementById('estatus').value = op.estatus;
-    
-    calculateAll(); // Recalcular y mostrar los valores en el display
-    
-    document.getElementById('operationModal').classList.add('show');
-    // Asegurarse de que la sección de información adicional esté desplegada al editar
-    document.getElementById('additionalInfoSection').classList.add('active');
-}
+// --- Historial y Eventos ---
 
 function getPreviousDate(dateString) {
     const date = new Date(dateString);
@@ -1176,63 +1187,37 @@ function loadWallyHistoryDate() {
 }
 
 document.getElementById('selectedDate').addEventListener('change', function() {
-    currentDate = this.value; // Actualizar currentDate con la fecha seleccionada
+    currentDate = this.value;
     loadOperations();
     updateHistorySelector();
 });
 
 document.getElementById('wallySelectedDate').addEventListener('change', function() {
-    currentWallyDate = this.value; // Actualizar currentWallyDate con la fecha seleccionada
+    currentWallyDate = this.value;
     loadWallyOperations();
     updateWallyHistorySelector();
 });
 
-// ===== MODIFICACIÓN: Evento para cerrar modales y panel IA =====
 window.onclick = function(event) {
     const operationModal = document.getElementById('operationModal');
     const wallyModal = document.getElementById('wallyModal');
     const ratingModal = document.getElementById('ratingModal');
-    const configModal = document.getElementById('configModal'); // New
-    const userProfileModal = document.getElementById('userProfileModal'); // New
-    const bankBreachModal = document.getElementById('bankBreachModal'); // New
-    const lotDetailsModal = document.getElementById('lotDetailsModal'); // New
-    const pendingDetailsModal = document.getElementById('pendingDetailsModal'); // New
+    const configModal = document.getElementById('configModal');
+    const userProfileModal = document.getElementById('userProfileModal');
+    const bankBreachModal = document.getElementById('bankBreachModal');
+    const lotDetailsModal = document.getElementById('lotDetailsModal');
+    const pendingDetailsModal = document.getElementById('pendingDetailsModal');
     const aiPanel = document.getElementById('aiPanel');
     
-    // Close operation modal if clicked outside
-    if (event.target === operationModal) {
-        closeModal();
-    }
-    // Close Wally modal if clicked outside
-    if (event.target === wallyModal) {
-        closeWallyModal();
-    }
-    // Close rating modal if clicked outside
-    if (event.target === ratingModal) {
-        closeRatingModal();
-    }
-    // Close config modal if clicked outside
-    if (event.target === configModal) {
-        closeConfigModal();
-    }
-    // Close user profile modal if clicked outside
-    if (event.target === userProfileModal) {
-        closeUserProfileModal();
-    }
-    // Close bank breach modal if clicked outside
-    if (event.target === bankBreachModal) {
-        closeBankBreachModal();
-    }
-    // Close lot details modal if clicked outside
-    if (event.target === lotDetailsModal) {
-        closeLotDetailsModal();
-    }
-    // Close pending details modal if clicked outside
-    if (event.target === pendingDetailsModal) {
-        closePendingDetailsModal();
-    }
+    if (event.target === operationModal) closeModal();
+    if (event.target === wallyModal) closeWallyModal();
+    if (event.target === ratingModal) closeRatingModal();
+    if (event.target === configModal) closeConfigModal();
+    if (event.target === userProfileModal) closeUserProfileModal();
+    if (event.target === bankBreachModal) closeBankBreachModal();
+    if (event.target === lotDetailsModal) closeLotDetailsModal();
+    if (event.target === pendingDetailsModal) closePendingDetailsModal();
     
-    // Check if clicked outside AI operations center
     if (!document.getElementById('aiOperationsCenter').contains(event.target) && 
         aiPanel.classList.contains('show')) {
         if (window.aiCenter) window.aiCenter.close();
@@ -1255,7 +1240,7 @@ function getWallyPreviousDate(dateString) {
 
 // ===== SISTEMA DE CALIFICACIÓN DE USUARIOS =====
 let currentRatingUser = '';
-let currentRatingOperationId = null; // Para identificar la operación que se está calificando
+let currentRatingOperationId = null;
 let selectedRatings = {
     transaction: 0,
     speed: 0,
@@ -1268,7 +1253,7 @@ function resetStars() {
             star.classList.remove('selected');
         });
     });
-    selectedRatings = { transaction: 0, speed: 0, diligence: 0 }; // Ensure internal state is reset
+    selectedRatings = { transaction: 0, speed: 0, diligence: 0 };
 }
 
 document.querySelectorAll('.rating-stars').forEach(container => {
@@ -1276,7 +1261,7 @@ document.querySelectorAll('.rating-stars').forEach(container => {
         if (event.target.classList.contains('star')) {
             const value = parseInt(event.target.dataset.value);
             const parent = event.target.parentNode;
-            const ratingType = parent.id.replace('rating', '').toLowerCase(); // e.g., 'transaction', 'speed'
+            const ratingType = parent.id.replace('rating', '').toLowerCase();
 
             parent.querySelectorAll('.star').forEach(star => {
                 if (parseInt(star.dataset.value) <= value) {
@@ -1285,12 +1270,11 @@ document.querySelectorAll('.rating-stars').forEach(container => {
                     star.classList.remove('selected');
                 }
             });
-            selectedRatings[ratingType] = value; // Store the selected value
+            selectedRatings[ratingType] = value;
         }
     });
 });
 
-// ===== MODIFICACIÓN: Funciones del modal de calificación =====
 function openRatingModal(userName) {
     currentRatingUser = userName;
     document.getElementById('ratingUserName').textContent = userName;
@@ -1302,7 +1286,7 @@ function closeRatingModal() {
     document.getElementById('ratingModal').classList.remove('show');
     currentRatingUser = '';
     currentRatingOperationId = null;
-    selectedRatings = { transaction: 0, speed: 0, diligence: 0 }; // Reset selected ratings
+    selectedRatings = { transaction: 0, speed: 0, diligence: 0 };
 }
 
 function submitRating() {
@@ -1310,7 +1294,6 @@ function submitRating() {
     const speedRating = selectedRatings.speed;
     const diligenceRating = selectedRatings.diligence;
 
-    // Validate that at least one rating has been provided
     if (transactionRating === 0 && speedRating === 0 && diligenceRating === 0) {
         showToast('Por favor, califique al menos un aspecto.', 'warning');
         return;
@@ -1356,7 +1339,7 @@ function renderRatingsTable() {
 
     const users = Object.keys(userRatings).filter(user => user.toLowerCase().includes(searchTerm));
 
-    users.sort((a, b) => calculateAverageRating(b) - calculateAverageRating(a)); // Ordenar por calificación promedio
+    users.sort((a, b) => calculateAverageRating(b) - calculateAverageRating(a));
 
     users.forEach(userName => {
         const ratings = userRatings[userName];
@@ -1412,6 +1395,7 @@ const defaultAIThresholds = {
 const defaultProfitGoals = {
     daily: 500.00
 };
+const defaultAdCommission = 0.0;
 
 function openConfigModal() {
     document.getElementById('configModal').classList.add('show');
@@ -1432,9 +1416,16 @@ function loadConfig() {
                 userConfig = {
                     paymentMethods: defaultPaymentMethods,
                     aiThresholds: defaultAIThresholds,
-                    profitGoals: defaultProfitGoals
+                    profitGoals: defaultProfitGoals,
+                    adCommission: defaultAdCommission
                 };
             }
+            // Asegurarse de que todos los campos por defecto existan si no están en la BD
+            userConfig.paymentMethods = userConfig.paymentMethods || defaultPaymentMethods;
+            userConfig.aiThresholds = userConfig.aiThresholds || defaultAIThresholds;
+            userConfig.profitGoals = userConfig.profitGoals || defaultProfitGoals;
+            userConfig.adCommission = userConfig.adCommission || defaultAdCommission;
+
             applyConfig();
         })
         .catch(error => {
@@ -1442,25 +1433,26 @@ function loadConfig() {
             userConfig = {
                 paymentMethods: defaultPaymentMethods,
                 aiThresholds: defaultAIThresholds,
-                profitGoals: defaultProfitGoals
+                profitGoals: defaultProfitGoals,
+                adCommission: defaultAdCommission
             };
             applyConfig();
         });
 }
 
 function applyConfig() {
-    // Apply AI thresholds
     if (window.aiCenter && userConfig.aiThresholds) {
         window.aiCenter.alertThresholds = { ...defaultAIThresholds, ...userConfig.aiThresholds };
     }
-    // Populate payment methods dropdown
     populatePaymentMethods();
-    // Update profit goal display
     updateProfitGoalProgress();
+    
+    // Actualizar etiqueta del switch de comisión
+    const commissionRate = userConfig.adCommission || 0;
+    document.getElementById('adCommissionLabel').textContent = `Aplicar ${commissionRate}% comisión por anuncio`;
 }
 
 function loadConfigToModal() {
-    // Load Payment Methods
     const paymentList = document.getElementById('frequentPaymentMethodsList');
     paymentList.innerHTML = '';
     const methodsToDisplay = userConfig.paymentMethods || defaultPaymentMethods;
@@ -1469,7 +1461,6 @@ function loadConfigToModal() {
     });
     makeSortable(paymentList);
 
-    // Load AI Parameters
     const aiThresholds = userConfig.aiThresholds || defaultAIThresholds;
     document.getElementById('aiBrechaMin').value = aiThresholds.brechaMin;
     document.getElementById('aiBrechaMax').value = aiThresholds.brechaMax;
@@ -1477,15 +1468,17 @@ function loadConfigToModal() {
     document.getElementById('aiRecompraCritica').value = aiThresholds.recompraCritica;
     document.getElementById('aiReventaCritica').value = aiThresholds.reventaCritica;
 
-    // Load Profit Goals
     const profitGoals = userConfig.profitGoals || defaultProfitGoals;
     document.getElementById('dailyProfitGoal').value = profitGoals.daily;
+    
+    // Cargar comisión por anuncio
+    document.getElementById('adCommission').value = userConfig.adCommission || defaultAdCommission;
 }
 
 function addPaymentMethodToList(method, listElement) {
     const li = document.createElement('li');
     li.dataset.method = method;
-    li.draggable = true; // Make list items draggable
+    li.draggable = true;
     li.innerHTML = `
         <span class="handle">☰</span>
         <span>${method}</span>
@@ -1539,11 +1532,9 @@ function makeSortable(listElement) {
 function saveConfig() {
     if (!currentUserId) return;
 
-    // Save Payment Methods
     const paymentListItems = document.querySelectorAll('#frequentPaymentMethodsList li');
     const savedPaymentMethods = Array.from(paymentListItems).map(li => li.dataset.method);
 
-    // Save AI Parameters
     const aiConfig = {
         brechaMin: parseFloat(document.getElementById('aiBrechaMin').value) || defaultAIThresholds.brechaMin,
         brechaMax: parseFloat(document.getElementById('aiBrechaMax').value) || defaultAIThresholds.brechaMax,
@@ -1552,21 +1543,23 @@ function saveConfig() {
         reventaCritica: parseFloat(document.getElementById('aiReventaCritica').value) || defaultAIThresholds.reventaCritica
     };
 
-    // Save Profit Goals
     const profitGoals = {
         daily: parseFloat(document.getElementById('dailyProfitGoal').value) || defaultProfitGoals.daily
     };
+    
+    const adCommission = parseFloat(document.getElementById('adCommission').value) || defaultAdCommission;
 
     userConfig = {
         paymentMethods: savedPaymentMethods,
         aiThresholds: aiConfig,
-        profitGoals: profitGoals
+        profitGoals: profitGoals,
+        adCommission: adCommission
     };
 
     db.collection('users').doc(currentUserId).collection('settings').doc('userConfig').set(userConfig)
         .then(() => {
             showToast('Configuración guardada con éxito.', 'success');
-            applyConfig(); // Re-apply config to update AI and dropdowns
+            applyConfig();
             closeConfigModal();
         })
         .catch(error => {
@@ -1577,12 +1570,11 @@ function saveConfig() {
 
 function populatePaymentMethods() {
     const selectElement = document.getElementById('metodoPago');
-    selectElement.innerHTML = '<option value="">Seleccionar método...</option>'; // Clear existing options
+    selectElement.innerHTML = '<option value="">Seleccionar método...</option>';
 
     const methods = userConfig.paymentMethods || defaultPaymentMethods;
-    const allMethods = new Set(methods.concat(defaultPaymentMethods)); // Ensure all default methods are available
+    const allMethods = new Set(methods.concat(defaultPaymentMethods));
 
-    // Add preferred methods first
     methods.forEach(method => {
         const option = document.createElement('option');
         option.value = method;
@@ -1590,7 +1582,6 @@ function populatePaymentMethods() {
         selectElement.appendChild(option);
     });
 
-    // Add any default methods not in preferred list
     defaultPaymentMethods.forEach(method => {
         if (!methods.includes(method)) {
             const option = document.createElement('option');
@@ -1605,10 +1596,9 @@ function updateProfitGoalProgress(currentDailyProfit = null) {
     const dailyGoal = userConfig.profitGoals ? userConfig.profitGoals.daily : defaultProfitGoals.daily;
     
     if (currentDailyProfit === null) {
-        // If not provided, calculate from current operations
         const todayOps = operations.filter(op => op.fecha === currentDate);
         currentDailyProfit = todayOps
-            .filter(op => op.operacion === 'Compra') // Assuming profit is primarily from buy operations
+            .filter(op => op.operacion === 'Compra')
             .reduce((sum, op) => sum + (Number(op.ves) || 0), 0);
     }
 
@@ -1617,11 +1607,11 @@ function updateProfitGoalProgress(currentDailyProfit = null) {
 
     const progressBar = document.getElementById('dailyProgressBar');
     let progressPercentage = (currentDailyProfit / dailyGoal) * 100;
-    progressPercentage = Math.min(Math.max(progressPercentage, 0), 100); // Clamp between 0 and 100
+    progressPercentage = Math.min(Math.max(progressPercentage, 0), 100);
 
     progressBar.style.width = `${progressPercentage}%`;
     if (progressPercentage >= 100) {
-        progressBar.style.background = 'linear-gradient(90deg, #48bb78, #2f855a)'; // Darker green for completion
+        progressBar.style.background = 'linear-gradient(90deg, #48bb78, #2f855a)';
     } else {
         progressBar.style.background = 'linear-gradient(90deg, var(--success), #38a169)';
     }
@@ -1645,13 +1635,11 @@ function closeUserProfileModal() {
 }
 
 async function loadUserProfileData(userName) {
-    // Load Ratings
     const avgRating = calculateAverageRating(userName);
     const totalRatings = userRatings[userName] ? userRatings[userName].length : 0;
     document.getElementById('profileAvgRating').textContent = `${avgRating.toFixed(2)} ★`;
     document.getElementById('profileTotalRatings').textContent = totalRatings;
 
-    // Load Operations History and calculate statistics
     const userOperations = operations.filter(op => op.usuario === userName);
     const userWallyOperations = wallyOperations.filter(op => op.usuario === userName);
     const allUserOps = [...userOperations, ...userWallyOperations].sort((a, b) => b.timestamp - a.timestamp);
@@ -1665,7 +1653,7 @@ async function loadUserProfileData(userName) {
     historyTableBody.innerHTML = '';
 
     allUserOps.forEach(op => {
-        if (op.operacion === 'Compra' || op.operacion === 'Venta') { // Main operations
+        if (op.operacion === 'Compra' || op.operacion === 'Venta') {
             totalUsdcVolume += (op.montoUsdc || 0);
             totalVesVolume += (op.montoBs || 0);
             historyTableBody.innerHTML += `
@@ -1677,10 +1665,10 @@ async function loadUserProfileData(userName) {
                     <td><span class="status-${op.estatus.toLowerCase().replace(' ', '-')}">${op.estatus}</span></td>
                 </tr>
             `;
-        } else { // Wally operations
+        } else {
             if (op.operacion === 'Compra') {
                 totalUsdcVolume += (op.reciboUsdc || 0);
-                totalVesVolume += (op.envioUsd || 0); // Assuming USD is equivalent to VES for volume tracking
+                totalVesVolume += (op.envioUsd || 0);
                 historyTableBody.innerHTML += `
                     <tr>
                         <td>${op.fecha}</td>
@@ -1692,7 +1680,7 @@ async function loadUserProfileData(userName) {
                 `;
             } else if (op.operacion === 'Venta') {
                 totalUsdcVolume += (op.envioUsdc || 0);
-                totalVesVolume += (op.reciboUsd || 0); // Assuming USD is equivalent to VES for volume tracking
+                totalVesVolume += (op.reciboUsd || 0);
                 historyTableBody.innerHTML += `
                     <tr>
                         <td>${op.fecha}</td>
@@ -1714,7 +1702,6 @@ async function loadUserProfileData(userName) {
     document.getElementById('profileNumOps').value = numOps;
     document.getElementById('profileLastOpDate').value = lastOpDate;
 
-    // Load Notes
     db.collection('users').doc(currentUserId).collection('userProfiles').doc(userName).get()
         .then(doc => {
             if (doc.exists) {
@@ -1749,13 +1736,12 @@ class AIOperationsCenter {
         this.isOpen = false;
         this.processedOperations = new Set();
         this.lastOperationCount = 0;
-        this.lastLotStates = new Map(); // Ahora se sincroniza con currentLotsData
+        this.lastLotStates = new Map();
         this.lastMetrics = {
             brecha: 0,
             ganancias: { ves: 0, usdc: 0 },
             operationsCount: 0
         };
-        // Default thresholds, will be overwritten by userConfig
         this.alertThresholds = {
             brechaMin: 2,
             brechaMax: 4,
@@ -1784,7 +1770,6 @@ class AIOperationsCenter {
         }
     }
 
-    // ===== MODIFICACIÓN: Abrir panel IA con transición =====
     open() {
         document.getElementById('aiPanel').classList.add('show');
         this.isOpen = true;
@@ -1793,7 +1778,6 @@ class AIOperationsCenter {
         this.renderNotifications();
     }
 
-    // ===== MODIFICACIÓN: Cerrar panel IA con transición =====
     close() {
         document.getElementById('aiPanel').classList.remove('show');
         this.isOpen = false;
@@ -1811,10 +1795,10 @@ class AIOperationsCenter {
                 });
             }
             
-            this.analyzeLotChanges(currentLotsData); // Usar currentLotsData global
+            this.analyzeLotChanges(currentLotsData);
             this.analyzeBreach(todayOps);
             this.analyzeGainsSynchronized(todayOps);
-            this.analyzePendingBalances(currentPendingData); // Usar currentPendingData global
+            this.analyzePendingBalances(currentPendingData);
             this.lastOperationCount = todayOps.length;
             this.updateMetrics();
         } else {
@@ -1850,8 +1834,6 @@ class AIOperationsCenter {
                 const lotKey = `closed_${lotId}`;
                 if (!this.processedOperations.has(lotKey)) {
                     this.processedOperations.add(lotKey);
-                    // La ganancia ya está calculada en applyFIFOForDate y almacenada en las operaciones
-                    // Aquí solo necesitamos el resumen del lote
                     const totalGainVes = operations.filter(op => op.lote && op.lote.includes(`${lotId}$`))
                                                 .reduce((sum, op) => sum + (Number(op.ves) || 0), 0);
                     const totalGainUsdc = operations.filter(op => op.lote && op.lote.includes(`${lotId}$`))
@@ -1870,7 +1852,7 @@ class AIOperationsCenter {
 
         currentLotsMap.forEach((currentLot, lotId) => {
             const prevLot = previousLots.get(lotId);
-            if (!prevLot) { // Nuevo lote
+            if (!prevLot) {
                 const lotKey = `new_${lotId}`;
                 if (!this.processedOperations.has(lotKey)) {
                     this.processedOperations.add(lotKey);
@@ -1882,7 +1864,7 @@ class AIOperationsCenter {
                         estado: 'Activo'
                     });
                 }
-            } else if (prevLot.faltante !== currentLot.faltante && currentLot.estado === 'activo') { // Progreso del lote
+            } else if (prevLot.faltante !== currentLot.faltante && currentLot.estado === 'activo') {
                 const progressKey = `progress_${lotId}_${currentLot.faltante.toFixed(1)}`;
                 if (!this.processedOperations.has(progressKey)) {
                     this.processedOperations.add(progressKey);
@@ -1909,7 +1891,7 @@ class AIOperationsCenter {
             });
         }
 
-        this.lastLotStates = new Map(currentLotsMap); // Actualizar el estado de los lotes para la próxima comparación
+        this.lastLotStates = new Map(currentLotsMap);
     }
 
     analyzeBreach(operations) {
@@ -2333,8 +2315,6 @@ class AIOperationsCenter {
     }
 
     onOperationsRecalculated() {
-        // No limpiar processedOperations aquí, ya que las operaciones no se "reinician"
-        // Solo se recalcula el estado de lotes y pendientes
         this.analyzeCurrentState();
         this.addNotification('info', 'Sistema Recalculado', 'Todas las operaciones han sido re-analizadas.');
     }
@@ -2365,9 +2345,6 @@ function clearNotifications() {
         window.aiCenter.lastOperationCount = 0;
     }
 }
-
-// Removed toggleAISettings as it's replaced by openConfigModal
-// function toggleAISettings() { ... }
 
 document.addEventListener('DOMContentLoaded', function() {
     window.aiCenter = new AIOperationsCenter();
@@ -2404,7 +2381,6 @@ window.notifyAIRecalculation = function() {
     }
 };
 
-// Función para mostrar un Toast
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
@@ -2416,34 +2392,27 @@ function showToast(message, type = 'info') {
     toast.classList.add('toast', type);
 
     let icon = '';
-    if (type === 'success') {
-        icon = '✅';
-    } else if (type === 'error') {
-        icon = '❌';
-    } else if (type === 'info') {
-        icon = 'ℹ️';
-    } else if (type === 'warning') {
-        icon = '⚠️';
-    }
+    if (type === 'success') icon = '✅';
+    else if (type === 'error') icon = '❌';
+    else if (type === 'info') icon = 'ℹ️';
+    else if (type === 'warning') icon = '⚠️';
 
     toast.innerHTML = `<span class="icon">${icon}</span><span>${message}</span>`;
     toastContainer.appendChild(toast);
 
-    // Forzar reflow para la animación
     void toast.offsetWidth; 
     toast.classList.add('show');
 
-    // Eliminar el toast después de un tiempo
     setTimeout(() => {
         toast.classList.remove('show');
-        toast.classList.add('hide'); // Añadir clase para animación de salida
+        toast.classList.add('hide');
         toast.addEventListener('transitionend', () => {
             toast.remove();
-        }, { once: true }); // Eliminar solo después de que la transición termine
-    }, 3000); // 3 segundos
+        }, { once: true });
+    }, 3000);
 }
 
-// ===== NUEVAS FUNCIONES PARA BRECHA POR BANCO (MODIFICADO) =====
+// ===== NUEVAS FUNCIONES PARA BRECHA POR BANCO, LOTES Y PENDIENTES =====
 
 function openBankBreachModal() {
     document.getElementById('bankBreachModal').classList.add('show');
@@ -2504,13 +2473,9 @@ function renderBankBreachesCards(bankBreaches) {
 
     bankBreaches.forEach(data => {
         let cardClass = '';
-        if (data.brecha > userConfig.aiThresholds.brechaMax) {
-            cardClass = 'breach-positive';
-        } else if (data.brecha < userConfig.aiThresholds.brechaMin) {
-            cardClass = 'breach-negative';
-        } else {
-            cardClass = 'breach-neutral';
-        }
+        if (data.brecha > userConfig.aiThresholds.brechaMax) cardClass = 'breach-positive';
+        else if (data.brecha < userConfig.aiThresholds.brechaMin) cardClass = 'breach-negative';
+        else cardClass = 'breach-neutral';
 
         const card = document.createElement('div');
         card.classList.add('info-card', cardClass);
@@ -2525,8 +2490,6 @@ function renderBankBreachesCards(bankBreaches) {
         cardsContainer.appendChild(card);
     });
 }
-
-// ===== NUEVAS FUNCIONES PARA DETALLES DE LOTES (MODIFICADO) =====
 
 function openLotDetailsModal() {
     document.getElementById('lotDetailsModal').classList.add('show');
@@ -2564,8 +2527,6 @@ function renderLotDetailsCards() {
         cardsContainer.appendChild(card);
     });
 }
-
-// ===== NUEVAS FUNCIONES PARA DETALLES DE PENDIENTES (MODIFICADO) =====
 
 function openPendingDetailsModal() {
     document.getElementById('pendingDetailsModal').classList.add('show');
