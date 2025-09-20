@@ -344,17 +344,17 @@
                         
                         <div class="form-group">
                             <label>Usuario</label>
-                            <input type="text" id="usuario" placeholder="Nombre del usuario" required>
+                            <input type="text" id="usuario" placeholder="Nombre del usuario">
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Referencia</label>
-                                <input type="text" id="referencia" placeholder="Nº de referencia" required>
+                                <input type="text" id="referencia" placeholder="Nº de referencia">
                             </div>
                             <div class="form-group status-group">
                                 <label>Estatus</label>
-                                <select id="estatus" required>
+                                <select id="estatus">
                                     <option value="">Seleccionar estatus...</option>
                                     <option value="En Curso">🔄 En Curso</option>
                                     <option value="En Disputa">⚠️ En Disputa</option>
@@ -367,7 +367,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Operación</label>
-                                <select id="operacion" onchange="updateFeeField()" required>
+                                <select id="operacion" onchange="updateFeeField()">
                                     <option value="">Seleccionar operación...</option>
                                     <option value="Compra">📈 Compra</option>
                                     <option value="Venta">📉 Venta</option>
@@ -375,7 +375,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Método de Pago</label>
-                                <select id="metodoPago" onchange="updateFeeField()" required>
+                                <select id="metodoPago" onchange="updateFeeField()">
                                     <option value="">Seleccionar método...</option>
                                     <!-- Options will be dynamically loaded and prioritized -->
                                 </select>
@@ -393,11 +393,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Tasa de Cambio</label>
-                                <input type="number" id="tasa" step="0.01" placeholder="0.00" onkeyup="calculateAll()" required>
+                                <input type="number" id="tasa" step="0.01" placeholder="0.00" onkeyup="calculateAll()">
                             </div>
                             <div class="form-group">
                                 <label>Monto USDC</label>
-                                <input type="number" id="montoUsdc" step="0.001" placeholder="0.00" onkeyup="calculateAll()" required>
+                                <input type="number" id="montoUsdc" step="0.001" placeholder="0.00" onkeyup="calculateAll()">
                             </div>
                         </div>
 
@@ -509,11 +509,10 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Método:</label>
-                                <select id="wallyMetodo" required>
-                                    <option value="">Seleccionar...</option>
+                                <label>Plataforma:</label>
+                                <select id="wallyPlatform" required>
                                     <option value="Wally">🚀 Wally</option>
-                                    <option value="Syklo">⚡ Syklo</option>
+                                    <option value="Zinli">🟣 Zinli</option>
                                 </select>
                             </div>
                             <div class="form-group" id="reciboUsdcGroup" style="display:none;">
