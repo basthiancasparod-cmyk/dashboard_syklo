@@ -162,7 +162,6 @@ function saveOperation() {
     let finalUsdc = originalUsdc;
     let appliedCommission = 0;
 
-    // Se recalcula el monto USDC final a guardar
     if (applyCommission && commissionRate > 0 && originalUsdc > 0) {
         const commissionAmount = originalUsdc * (commissionRate / 100);
         if (operacion === 'Compra') {
@@ -179,7 +178,7 @@ function saveOperation() {
         operacion: document.getElementById('operacion').value,
         tasa: parseFloat(document.getElementById('tasa').value),
         metodoPago: document.getElementById('metodoPago').value,
-        montoUsdc: finalUsdc, // <-- Aquí se guarda el monto USDC correcto
+        montoUsdc: finalUsdc,
         montoBs: parseFloat(document.getElementById('montoBs').value),
         comisionVes: parseFloat(document.getElementById('comisionVes').value) || 0,
         total: parseFloat(document.getElementById('total').value),
@@ -192,9 +191,9 @@ function saveOperation() {
         adCommissionPercent: appliedCommission 
     };
 
-    if (!operation.usuario || !operation.referencia || !operation.operacion || 
-        isNaN(operation.tasa) || isNaN(originalUsdc) || !operation.metodoPago || !operation.estatus) {
-        showToast('Por favor, complete todos los campos obligatorios.', 'error');
+    // LA VALIDACIÓN CORRECTA Y FUNCIONAL
+    if (!operation.usuario || isNaN(operation.tasa) || isNaN(originalUsdc) || originalUsdc <= 0) {
+        showToast('Por favor, complete Usuario, Tasa y Monto USDC.', 'error');
         return;
     }
 
@@ -207,9 +206,11 @@ function saveOperation() {
             closeModal();
             showToast('Operación guardada con éxito', 'success');
 
-            lastSavedUser = operation.usuario;
-            lastSavedOperationType = 'main';
-            openRatingModal(operation.usuario);
+            if (editingIndex === -1) { // Solo abrir modal de rating para operaciones nuevas
+                lastSavedUser = operation.usuario;
+                lastSavedOperationType = 'main';
+                openRatingModal(operation.usuario);
+            }
 
             if (window.aiCenter) {
                 if (editingIndex >= 0) {
@@ -262,7 +263,7 @@ function saveWallyOperation() {
         usuario: document.getElementById('wallyUsuario').value,
         referencia: document.getElementById('wallyReferencia').value,
         operacion: operacion,
-        metodo: document.getElementById('wallyMetodo').value,
+        platform: document.getElementById('wallyPlatform').value, // Correctamente usa 'platform'
         fecha: currentWallyDate,
         timestamp: Date.now()
     };
@@ -279,7 +280,9 @@ function saveWallyOperation() {
         operation.gananciaUsd = parseFloat(document.getElementById('gananciaUsd').value);
     }
 
-    if (!operation.usuario || !operation.referencia || !operation.operacion || !operation.metodo || 
+    // --- LÍNEA CORREGIDA ---
+    // Se eliminó la comprobación de '!operation.metodo' que causaba el error.
+    if (!operation.usuario || !operation.referencia || !operation.operacion || 
         (operation.operacion === 'Compra' && (isNaN(operation.reciboUsdc) || isNaN(operation.tasaCompra))) ||
         (operation.operacion === 'Venta' && (isNaN(operation.envioUsdc) || isNaN(operation.tasaVenta)))) {
         showToast('Por favor, complete todos los campos obligatorios.', 'error');
@@ -751,15 +754,19 @@ function renderWallyTables() {
     
     const searchTerm = document.getElementById('searchWallyOperations').value.toLowerCase();
     const filterOperacion = document.getElementById('filterWallyOperacion').value;
-    const filterMetodo = document.getElementById('filterWallyMetodo').value;
+    
+    // MODIFICADO: Cambiamos el filtro de 'metodo' a 'platform'
+    const filterPlatform = document.getElementById('filterWallyMetodo').value; // El ID del select no lo cambiamos para no modificar más HTML
 
     const filteredWallyOps = currentOps.filter(op => {
         const matchesSearch = (op.usuario && op.usuario.toLowerCase().includes(searchTerm)) || 
                               (op.referencia && op.referencia.toLowerCase().includes(searchTerm));
         const matchesOperacion = filterOperacion === '' || op.operacion === filterOperacion;
-        const matchesMetodo = filterMetodo === '' || op.metodo === filterMetodo;
+        
+        // MODIFICADO: Lógica de filtro actualizada
+        const matchesPlatform = filterPlatform === '' || (op.platform || 'Wally') === filterPlatform;
 
-        return matchesSearch && matchesOperacion && matchesMetodo;
+        return matchesSearch && matchesOperacion && matchesPlatform;
     });
 
     const compras = filteredWallyOps.filter(op => op.operacion === 'Compra');
@@ -769,10 +776,16 @@ function renderWallyTables() {
         const globalIndex = wallyOperations.indexOf(op);
         const avgRating = calculateAverageRating(op.usuario);
         const ratingHtml = avgRating > 0 ? `<span class="user-rating">${avgRating.toFixed(1)} <span class="star-icon">★</span></span>` : '';
+        
+        // NUEVO: Obtener la plataforma para mostrarla
+        const platform = op.platform || 'Wally'; 
 
         return `
             <tr>
-                <td><span class="clickable-username" onclick="openUserProfileModal('${op.usuario}')">${op.usuario || ''}</span> ${ratingHtml}</td>
+                <td>
+                    <span class="clickable-username" onclick="openUserProfileModal('${op.usuario}')">${op.usuario || ''}</span> ${ratingHtml}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${platform}</div>
+                </td>
                 <td>${op.referencia || ''}</td>
                 <td>${(Number(op.reciboUsdc) || 0).toFixed(2)}</td>
                 <td>${(Number(op.tasaCompra) || 0).toFixed(3)}</td>
@@ -791,9 +804,15 @@ function renderWallyTables() {
         const avgRating = calculateAverageRating(op.usuario);
         const ratingHtml = avgRating > 0 ? `<span class="user-rating">${avgRating.toFixed(1)} <span class="star-icon">★</span></span>` : '';
 
+        // NUEVO: Obtener la plataforma para mostrarla
+        const platform = op.platform || 'Wally';
+
         return `
             <tr>
-                <td><span class="clickable-username" onclick="openUserProfileModal('${op.usuario}')">${op.usuario || ''}</span> ${ratingHtml}</td>
+                <td>
+                    <span class="clickable-username" onclick="openUserProfileModal('${op.usuario}')">${op.usuario || ''}</span> ${ratingHtml}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${platform}</div>
+                </td>
                 <td>${op.referencia || ''}</td>
                 <td>${(Number(op.envioUsdc) || 0).toFixed(2)}</td>
                 <td>${(Number(op.tasaVenta) || 0).toFixed(3)}</td>
@@ -815,32 +834,34 @@ function filterWallyOperations() {
 function editOperation(index) {
     editingIndex = index;
     const op = operations[index];
-    
+
     document.getElementById('modalTitle').textContent = 'Editar Operación';
-    
+
     let originalMontoUsdc = op.montoUsdc;
     if (op.adCommissionPercent > 0) {
-        // Calcular el monto original antes de la comisión
-        originalMontoUsdc = op.montoUsdc / (1 - (op.adCommissionPercent / 100));
+        if (op.operacion === 'Compra') {
+            originalMontoUsdc = op.montoUsdc / (1 - op.adCommissionPercent / 100);
+        } else { 
+            originalMontoUsdc = op.montoUsdc / (1 + op.adCommissionPercent / 100);
+        }
         document.getElementById('applyAdCommissionSwitch').checked = true;
     } else {
         document.getElementById('applyAdCommissionSwitch').checked = false;
     }
-    
+
     document.getElementById('usuario').value = op.usuario;
     document.getElementById('referencia').value = op.referencia;
     document.getElementById('operacion').value = op.operacion;
     document.getElementById('tasa').value = op.tasa;
     document.getElementById('metodoPago').value = op.metodoPago;
     document.getElementById('montoUsdc').value = originalMontoUsdc.toFixed(3);
-    
     document.getElementById('ves').value = op.ves;
     document.getElementById('usdc').value = op.usdc;
     document.getElementById('lote').value = op.lote;
     document.getElementById('estatus').value = op.estatus;
-    
+
     calculateAll(); 
-    
+
     document.getElementById('operationModal').classList.add('show');
     document.getElementById('additionalInfoSection').classList.add('active');
 }
@@ -854,7 +875,7 @@ function editWallyOperation(index) {
     document.getElementById('wallyUsuario').value = op.usuario || '';
     document.getElementById('wallyReferencia').value = op.referencia || '';
     document.getElementById('wallyOperacion').value = op.operacion || '';
-    document.getElementById('wallyMetodo').value = op.metodo || '';
+    document.getElementById('wallyPlatform').value = op.platform || 'Wally'; // Usamos 'Wally' como default
     updateWallyFields();
 
     if (op.operacion === 'Compra') {
